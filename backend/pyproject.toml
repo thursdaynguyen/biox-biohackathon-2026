@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 160
+target-version = "py312"
+
+[tool.ruff.lint.isort]
+known-first-party = ["."]
+
+[tool.ty.environment]
+python-version = "3.12"
+
+[tool.ty.src]
+include = ["."]
