@@ -1,0 +1,1 @@
+carve /Users/taindp/workspace/personal/biox-biohackathon-2026/data/ncbi_dataset/ncbi_dataset/data/GCA_000182925.2/protein.faa --solver scip -o outputs/test_carveme.xml
