@@ -1,0 +1,9 @@
+streamlit>=1.0
+numpy
+pytest
+# Optional for real FBA integration (heavy):
+# cobra
+# Optional for rich pathway maps (Escher JSON overlay):
+# escher
+# Optional for interactive Sankey flux graph:
+# plotly
