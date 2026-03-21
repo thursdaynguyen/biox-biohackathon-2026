@@ -2,6 +2,8 @@
 __pycache__/
 *.py[cod]
 *.pyo
+.mypy_cache/
+.ruff_cache/
 .python-version
 .venv/
 
@@ -14,6 +16,10 @@ build/
 # Virtualenv
 env/
 venv/
+
+# Nodejs
+node_modules/
+vite/
 
 # Editors
 .idea/
@@ -29,4 +35,7 @@ htmlcov/
 .env
 .copilot
 data/
+!data/.gitkeep
+!data/**/.gitkeep
+tmp/
 outputs/
