@@ -139,6 +139,7 @@ const evaluation = ref(null)
 const sessionReady = computed(() => Boolean(sessionId.value))
 const currentCopy = computed(() => stepTitles[currentStep.value])
 const modeDirection = computed(() => (activeMode.value === 'recommended' ? 'recommended' : 'manual'))
+const profileOptions = computed(() => Object.keys(mockResults.value).sort())
 const mockRecordsForSelection = computed(() =>
   selectedMockAccession.value ? mockResults.value[selectedMockAccession.value] ?? [] : [],
 )
@@ -241,46 +242,6 @@ function onFileChange(event) {
   uploadFileName.value = file.name
 }
 
-function accessionFromFileName(fileName) {
-  const match = fileName.match(/GCA_\d+\.\d+/i)
-  return match ? match[0].toUpperCase() : ''
-}
-
-function profileIdFromModelPath(pathValue) {
-  if (!pathValue) {
-    return ''
-  }
-
-  const normalizedSegments = String(pathValue)
-    .split(/[\\/]/)
-    .filter(Boolean)
-
-  if (!normalizedSegments.length) {
-    return ''
-  }
-
-  const fileName = normalizedSegments.at(-1) ?? ''
-  const parentName = normalizedSegments.length > 1 ? normalizedSegments.at(-2) ?? '' : ''
-  const baseName = fileName.replace(/\.xml$/i, '')
-
-  const candidates = [baseName, parentName]
-
-  for (const candidate of candidates) {
-    if (candidate && mockResults.value[candidate]) {
-      return candidate
-    }
-  }
-
-  for (const candidate of candidates) {
-    const accession = accessionFromFileName(candidate)
-    if (accession && mockResults.value[accession]) {
-      return accession
-    }
-  }
-
-  return ''
-}
-
 function toUiMagnitude(value) {
   return Number(Math.abs(Number(value ?? 0)).toFixed(3))
 }
@@ -306,26 +267,6 @@ function normalizeMockCandidate(record) {
       cpu_time: record.cpu_time,
     },
   }
-}
-
-function resolveMockAccession(pathValue, fileName) {
-  const keys = Object.keys(mockResults.value)
-
-  if (!keys.length) {
-    return ''
-  }
-
-  const modelProfile = profileIdFromModelPath(pathValue)
-  if (modelProfile) {
-    return modelProfile
-  }
-
-  const accession = accessionFromFileName(fileName)
-  if (accession && mockResults.value[accession]) {
-    return accession
-  }
-
-  return keys[0]
 }
 
 function syncParametersFromCandidate(candidate) {
@@ -362,6 +303,11 @@ async function uploadGenome() {
   resetError()
   setInfo('')
 
+  if (!selectedMockAccession.value) {
+    setError('Select a demo profile before uploading your FASTA file.')
+    return
+  }
+
   if (!uploadFile.value) {
     setError('Select a protein FASTA file before starting the session.')
     return
@@ -385,22 +331,10 @@ async function uploadGenome() {
     const payload = await response.json()
     sessionId.value = payload.session_id
     modelPath.value = payload.model_path
-    selectedMockAccession.value = resolveMockAccession(payload.model_path, uploadFileName.value)
-
     if (selectedMockAccession.value) {
       const firstMockCandidate = normalizeMockCandidate(mockResults.value[selectedMockAccession.value][0])
       syncParametersFromCandidate(firstMockCandidate)
-
-      const matchedModelProfile = profileIdFromModelPath(payload.model_path)
-      const matchedAccession = accessionFromFileName(uploadFileName.value)
-
-      if (matchedModelProfile && matchedModelProfile === selectedMockAccession.value) {
-        setInfo(`Mock optimization profile matched from the generated GEM profile: ${selectedMockAccession.value}.`)
-      } else if (matchedAccession && matchedAccession === selectedMockAccession.value) {
-        setInfo(`Mock optimization profile matched from the uploaded filename: ${selectedMockAccession.value}.`)
-      } else {
-        setInfo(`No exact GEM profile match was found. Using demo profile ${selectedMockAccession.value}.`)
-      }
+      setInfo(`Using demo profile ${selectedMockAccession.value}.`)
     }
 
     currentStep.value = 1
@@ -543,6 +477,9 @@ async function loadMockResults() {
     }
 
     mockResults.value = await response.json()
+    if (!selectedMockAccession.value) {
+      selectedMockAccession.value = Object.keys(mockResults.value)[0] ?? ''
+    }
   } catch (error) {
     setError(error instanceof Error ? error.message : 'The mock data request failed.')
   }
@@ -578,7 +515,10 @@ onMounted(() => {
               v-if="currentStep === 0"
               :upload-file-name="uploadFileName"
               :upload-loading="loading.upload"
+              :profile-options="profileOptions"
+              :selected-profile="selectedMockAccession"
               @file-change="onFileChange"
+              @update:selected-profile="selectedMockAccession = $event"
             />
 
             <ModeStage
@@ -645,7 +585,7 @@ onMounted(() => {
           <template #footer-right>
             <button
               class="primary-button"
-              :disabled="currentStep === 3 || (currentStep === 0 && loading.upload)"
+              :disabled="currentStep === 3 || (currentStep === 0 && (loading.upload || !selectedMockAccession))"
               @click="currentStep === 0 ? uploadGenome() : goNext()"
             >
               {{
