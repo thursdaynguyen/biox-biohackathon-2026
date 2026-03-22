@@ -12,7 +12,12 @@ def run_carveme(
     """Call carve to build the model."""
     workdir = cwd if cwd else Path(__file__).resolve().parents[2]
     cmd = ["carve", str(fasta_path), "--solver", solver, "-o", str(output_path)]
-    subprocess.run(cmd, check=True, cwd=workdir)
+    try:
+        subprocess.run(cmd, check=True, cwd=workdir)
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            "CarveMe CLI was not found. Install CarveMe and ensure the `carve` command is on PATH."
+        ) from exc
 
 
 def main():
@@ -39,4 +44,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        raise SystemExit(str(exc))
