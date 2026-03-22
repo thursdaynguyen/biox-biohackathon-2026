@@ -20,6 +20,10 @@ defineProps({
     type: String,
     required: true,
   },
+  formatDecimal: {
+    type: Function,
+    required: true,
+  },
 })
 </script>
 
@@ -33,7 +37,7 @@ defineProps({
     <div class="summary-grid">
       <article class="content-block">
         <p class="section-kicker">Best mock candidate</p>
-        <h4>{{ bestCandidate?.cost ?? 'Pending' }}</h4>
+        <h4>{{ bestCandidate ? formatDecimal(bestCandidate.cost) : 'Pending' }}</h4>
         <p class="section-copy">
           {{ mockAccession ? `Profile: ${mockAccession}` : 'Profile pending' }}
         </p>
@@ -43,14 +47,14 @@ defineProps({
             :key="field.key"
             class="mini-chip"
           >
-            {{ field.label }}: {{ bestCandidate?.parameters?.[field.key] ?? 'N/A' }}
+            {{ field.label }}: {{ bestCandidate ? formatDecimal(bestCandidate.parameters?.[field.key]) : 'N/A' }}
           </span>
         </div>
       </article>
 
       <article class="content-block">
         <p class="section-kicker">Manual result</p>
-        <h4>{{ evaluation?.objective_value ?? 'Pending' }}</h4>
+        <h4>{{ evaluation ? formatDecimal(evaluation.objective_value) : 'Pending' }}</h4>
         <p class="section-copy">
           Live simulation output from the current custom condition.
         </p>

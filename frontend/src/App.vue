@@ -115,8 +115,6 @@ const selectedMockAccession = ref('')
 
 const loading = reactive({
   upload: false,
-  optimum: false,
-  candidates: false,
   evaluation: false,
 })
 
@@ -132,43 +130,60 @@ const parameters = reactive({
 })
 
 const topK = ref(5)
-const optimum = ref(null)
-const candidates = ref([])
 const evaluation = ref(null)
 
 const sessionReady = computed(() => Boolean(sessionId.value))
-const currentCopy = computed(() => stepTitles[currentStep.value])
-const modeDirection = computed(() => (activeMode.value === 'recommended' ? 'recommended' : 'manual'))
+const currentCopy = computed(() => {
+  if (currentStep.value !== 2) {
+    return stepTitles[currentStep.value]
+  }
+
+  if (activeMode.value === 'recommended') {
+    return {
+      eyebrow: 'Step 3 of 4',
+      title: 'Review optimization suggestions',
+      description: 'Inspect the precomputed best condition and compare the strongest suggested media settings for the selected demo profile.',
+    }
+  }
+
+  return {
+    eyebrow: 'Step 3 of 4',
+    title: 'Simulate a parameter set',
+    description: 'Adjust a small set of media parameters and run a live model simulation with the current GEM session.',
+  }
+})
 const profileOptions = computed(() => Object.keys(mockResults.value).sort())
 const mockRecordsForSelection = computed(() =>
   selectedMockAccession.value ? mockResults.value[selectedMockAccession.value] ?? [] : [],
 )
 
 const bestAvailableCandidate = computed(() => {
-  if (optimum.value?.parameters) {
-    return optimum.value
+  if (!mockRecordsForSelection.value.length) {
+    return null
   }
 
-  if (candidates.value.length > 0) {
-    return candidates.value[0]
-  }
-
-  return null
+  const best = [...mockRecordsForSelection.value].sort((left, right) => left.cost - right.cost)[0]
+  return normalizeMockCandidate(best)
 })
 
 const displayCandidates = computed(() => {
-  if (!candidates.value.length) {
+  if (!mockRecordsForSelection.value.length) {
     return []
   }
 
-  const costs = candidates.value
+  const candidateList = [...mockRecordsForSelection.value]
+    .sort((left, right) => left.cost - right.cost)
+    .slice(0, topK.value)
+    .map(normalizeMockCandidate)
+
+  const costs = candidateList
     .map((candidate) => Number(candidate.cost ?? 0))
     .filter((value) => Number.isFinite(value))
 
   const minCost = Math.min(...costs)
   const maxCost = Math.max(...costs)
 
-  return candidates.value.map((candidate) => {
+  return candidateList.map((candidate) => {
     const cost = Number(candidate.cost ?? 0)
     const ratio = maxCost === minCost ? 1 : (maxCost - cost) / (maxCost - minCost)
     return {
@@ -248,6 +263,11 @@ function toUiMagnitude(value) {
 
 function toModelBound(value) {
   return -Math.abs(Number(value ?? 0))
+}
+
+function formatDecimal(value) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue.toFixed(3) : 'N/A'
 }
 
 function normalizeMockCandidate(record) {
@@ -349,23 +369,7 @@ async function fetchOptimum() {
   resetError()
 
   if (!sessionReady.value) {
-    setError('Create a session before requesting the recommended setup.')
-    return
-  }
-
-  loading.optimum = true
-
-  try {
-    if (!mockRecordsForSelection.value.length) {
-      throw new Error('No mock optimization profile is available for this session.')
-    }
-
-    const best = [...mockRecordsForSelection.value].sort((left, right) => left.cost - right.cost)[0]
-    optimum.value = normalizeMockCandidate(best)
-  } catch (error) {
-    setError(error instanceof Error ? error.message : 'The optimum request failed.')
-  } finally {
-    loading.optimum = false
+    setError('Create a session before reviewing optimization suggestions.')
   }
 }
 
@@ -373,25 +377,7 @@ async function fetchCandidates() {
   resetError()
 
   if (!sessionReady.value) {
-    setError('Create a session before requesting top candidates.')
-    return
-  }
-
-  loading.candidates = true
-
-  try {
-    if (!mockRecordsForSelection.value.length) {
-      throw new Error('No mock optimization profile is available for this session.')
-    }
-
-    candidates.value = [...mockRecordsForSelection.value]
-      .sort((left, right) => left.cost - right.cost)
-      .slice(0, topK.value)
-      .map(normalizeMockCandidate)
-  } catch (error) {
-    setError(error instanceof Error ? error.message : 'The candidates request failed.')
-  } finally {
-    loading.candidates = false
+    setError('Create a session before reviewing optimization suggestions.')
   }
 }
 
@@ -463,6 +449,10 @@ function enterWorkspace(mode) {
   activeMode.value = mode
   stepDirection.value = 'forward'
   currentStep.value = 2
+}
+
+function switchWorkspaceMode(mode) {
+  activeMode.value = mode
 }
 
 const transitionName = computed(() =>
@@ -541,11 +531,9 @@ onMounted(() => {
               :diagnostics="diagnosticsEntries"
               :parameters="parameters"
               :parameter-fields="parameterFields"
-              :loading-optimum="loading.optimum"
-              :loading-candidates="loading.candidates"
+              :format-decimal="formatDecimal"
               :loading-evaluation="loading.evaluation"
-              :mode-direction="modeDirection"
-              @switch-mode="activeMode = $event"
+              @switch-mode="switchWorkspaceMode"
               @update:top-k="topK = $event"
               @fetch-optimum="fetchOptimum"
               @fetch-candidates="fetchCandidates"
@@ -561,6 +549,7 @@ onMounted(() => {
               :parameter-fields="parameterFields"
               :mock-accession="selectedMockAccession"
               :summary-narrative="summaryNarrative"
+              :format-decimal="formatDecimal"
             />
           </template>
 
