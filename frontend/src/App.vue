@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 
 import AppCardShell from './components/AppCardShell.vue'
 import ModeStage from './components/ModeStage.vue'
-import SummaryStage from './components/SummaryStage.vue'
 import UploadStage from './components/UploadStage.vue'
 import WorkspaceStage from './components/WorkspaceStage.vue'
 
@@ -80,24 +79,16 @@ const parameterFields = [
 
 const stepTitles = [
   {
-    eyebrow: 'Step 1 of 4',
     title: 'Create a model session',
     description: 'Start the demo with a protein FASTA file and attach it to the closest precomputed optimization profile.',
   },
   {
-    eyebrow: 'Step 2 of 4',
     title: 'Choose an exploration path',
     description: 'Pick the workflow you want to enter first. You can still switch inside the workspace.',
   },
   {
-    eyebrow: 'Step 3 of 4',
     title: 'Explore candidate conditions',
     description: 'Move between recommended and manual exploration without leaving the same workspace.',
-  },
-  {
-    eyebrow: 'Step 4 of 4',
-    title: 'Review the strongest signal',
-    description: 'Summarize what the model currently suggests and what to try next.',
   },
 ]
 
@@ -141,14 +132,12 @@ const currentCopy = computed(() => {
 
   if (activeMode.value === 'recommended') {
     return {
-      eyebrow: 'Step 3 of 4',
       title: 'Review optimization suggestions',
       description: 'Inspect the precomputed best condition and compare the strongest suggested media settings for the selected demo profile.',
     }
   }
 
   return {
-    eyebrow: 'Step 3 of 4',
     title: 'Simulate a parameter set',
     description: 'Adjust a small set of media parameters and run a live model simulation with the current GEM session.',
   }
@@ -209,22 +198,6 @@ const diagnosticsEntries = computed(() => {
   }
 
   return Object.entries(evaluation.value.diagnostics)
-})
-
-const summaryNarrative = computed(() => {
-  if (evaluation.value && bestAvailableCandidate.value) {
-    return 'The mock optimization profile gives you the lowest-cost candidate, while the manual run shows how your custom condition behaves in the live model.'
-  }
-
-  if (bestAvailableCandidate.value) {
-    return 'The strongest available recommendation currently comes from the precomputed optimization profile.'
-  }
-
-  if (evaluation.value) {
-    return 'A manual evaluation is available, but no recommended candidate has been fetched yet.'
-  }
-
-  return 'Run either recommended or manual exploration to generate an actionable summary.'
 })
 
 function resetError() {
@@ -433,7 +406,7 @@ function goNext() {
     return
   }
 
-  if (currentStep.value < 3) {
+  if (currentStep.value < 2) {
     stepDirection.value = 'forward'
     currentStep.value += 1
   }
@@ -513,7 +486,6 @@ onMounted(() => {
       <Transition :name="transitionName" mode="out-in">
         <AppCardShell
           :key="currentStep"
-          :eyebrow="currentCopy.eyebrow"
           :title="currentCopy.title"
           :description="currentCopy.description"
         >
@@ -559,15 +531,6 @@ onMounted(() => {
             @evaluate="runEvaluation"
           />
 
-            <SummaryStage
-              v-else
-              :best-candidate="bestAvailableCandidate"
-              :evaluation="evaluation"
-              :parameter-fields="parameterFields"
-              :mock-accession="selectedMockAccession"
-              :summary-narrative="summaryNarrative"
-              :format-decimal="formatDecimal"
-            />
           </template>
 
           <template #footer-left>
@@ -590,22 +553,19 @@ onMounted(() => {
 
           <template #footer-right>
             <button
+              v-if="currentStep < 2"
               class="primary-button"
-              :disabled="currentStep === 3 || (currentStep === 0 && (loading.upload || !selectedMockAccession))"
+              :disabled="currentStep === 0 && (loading.upload || !selectedMockAccession)"
               @click="currentStep === 0 ? uploadGenome() : goNext()"
             >
               {{
                 currentStep === 0
                   ? (loading.upload ? 'Preparing workspace...' : 'Upload and continue')
-                  : currentStep === 1
-                    ? (
-                        activeMode === 'recommended'
-                          ? 'Continue with optimization suggestions'
-                          : 'Continue with parameter simulation'
-                      )
-                  : currentStep === 2
-                    ? 'Review summary'
-                    : 'Next step'
+                  : (
+                      activeMode === 'recommended'
+                        ? 'Open optimization suggestions'
+                        : 'Open parameter simulation'
+                    )
               }}
             </button>
           </template>

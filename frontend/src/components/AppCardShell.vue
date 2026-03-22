@@ -1,9 +1,5 @@
 <script setup>
 defineProps({
-  eyebrow: {
-    type: String,
-    required: true,
-  },
   title: {
     type: String,
     required: true,
@@ -37,7 +33,6 @@ defineEmits(['back', 'next'])
   <main class="card-shell">
     <header class="card-head">
       <div class="card-copy">
-        <p class="eyebrow">{{ eyebrow }}</p>
         <h2>{{ title }}</h2>
         <p class="card-description">{{ description }}</p>
       </div>
