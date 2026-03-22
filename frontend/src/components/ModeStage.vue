@@ -15,10 +15,6 @@ defineEmits(['update:mode', 'choose'])
 
 <template>
   <div class="stage-layout mode-stage">
-    <p v-if="!sessionReady" class="empty-copy">
-      Start a session first. The workspace will unlock after upload.
-    </p>
-
     <div class="mode-grid">
       <button
         class="mode-option"
@@ -26,9 +22,12 @@ defineEmits(['update:mode', 'choose'])
         :disabled="!sessionReady"
         @click="$emit('update:mode', 'recommended')"
       >
-        <p class="section-kicker">Recommended</p>
-        <h3>Let the workflow propose strong candidates</h3>
-        <span>Fetch the best point first, then compare the top candidates.</span>
+        <p class="section-kicker">Optimization path</p>
+        <h3>Get optimization suggestions</h3>
+        <span>
+          See the best recommended media settings and compare top candidate conditions
+          from the optimization results.
+        </span>
       </button>
 
       <button
@@ -37,19 +36,12 @@ defineEmits(['update:mode', 'choose'])
         :disabled="!sessionReady"
         @click="$emit('update:mode', 'manual')"
       >
-        <p class="section-kicker">Manual</p>
-        <h3>Test your own media parameters</h3>
-        <span>Set a small number of key variables and inspect the resulting score.</span>
-      </button>
-    </div>
-
-    <div class="mode-action-row">
-      <button
-        class="primary-button"
-        :disabled="!sessionReady"
-        @click="$emit('choose', mode)"
-      >
-        Enter {{ mode === 'recommended' ? 'recommended' : 'manual' }} workspace
+        <p class="section-kicker">Simulation path</p>
+        <h3>Simulate a parameter set</h3>
+        <span>
+          Enter your own media parameters and run a live simulation to inspect the
+          resulting model behavior.
+        </span>
       </button>
     </div>
   </div>

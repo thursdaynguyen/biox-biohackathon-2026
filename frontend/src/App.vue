@@ -506,6 +506,11 @@ function goNext() {
     return
   }
 
+  if (currentStep.value === 1) {
+    enterWorkspace(activeMode.value)
+    return
+  }
+
   if (currentStep.value < 3) {
     stepDirection.value = 'forward'
     currentStep.value += 1
@@ -621,7 +626,7 @@ onMounted(() => {
 
           <template #footer-left>
             <button
-              v-if="currentStep > 0"
+              v-if="currentStep > 1"
               class="ghost-button"
               @click="goBack"
             >
@@ -646,6 +651,12 @@ onMounted(() => {
               {{
                 currentStep === 0
                   ? (loading.upload ? 'Preparing workspace...' : 'Upload and continue')
+                  : currentStep === 1
+                    ? (
+                        activeMode === 'recommended'
+                          ? 'Continue with optimization suggestions'
+                          : 'Continue with parameter simulation'
+                      )
                   : currentStep === 2
                     ? 'Review summary'
                     : 'Next step'
