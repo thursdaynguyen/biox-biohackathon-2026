@@ -1,305 +1,615 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import CandidatesPanel from './components/CandidatesPanel.vue'
-import DiagnosticsPanel from './components/DiagnosticsPanel.vue'
-import ErrorBanner from './components/ErrorBanner.vue'
-import HeroSection from './components/HeroSection.vue'
-import ManualEvaluationPanel from './components/ManualEvaluationPanel.vue'
-import ModePanel from './components/ModePanel.vue'
-import SummaryPanel from './components/SummaryPanel.vue'
-import UploadPanel from './components/UploadPanel.vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+import AppCardShell from './components/AppCardShell.vue'
+import ModeStage from './components/ModeStage.vue'
+import SummaryStage from './components/SummaryStage.vue'
+import UploadStage from './components/UploadStage.vue'
+import WorkspaceStage from './components/WorkspaceStage.vue'
+
+const API_PREFIX = '/api'
 const ALLOWED_UPLOAD_SUFFIXES = ['.faa', '.fa', '.fasta']
+const DEFAULT_MOCK_PATH = '/mock/biox_tuning_results.json'
 
-const targetObjective = ref('growth')
-const mode = ref('recommended')
-const sessionId = ref('')
+const parameterFields = [
+  {
+    key: 'EX_cellb_e',
+    label: 'Cellobiose',
+    hint: 'Complex carbon source',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_glc__D_e',
+    label: 'Glucose',
+    hint: 'Primary carbon source',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_glyc_e',
+    label: 'Glycerol',
+    hint: 'Alternative carbon source',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_nh4_e',
+    label: 'Ammonium',
+    hint: 'Nitrogen supply',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_o2_e',
+    label: 'Oxygen',
+    hint: 'Aeration window',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_pi_e',
+    label: 'Phosphate',
+    hint: 'Phosphorus balance',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_so4_e',
+    label: 'Sulfate',
+    hint: 'Sulfur source',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+  {
+    key: 'EX_xyl__D_e',
+    label: 'Xylose',
+    hint: 'Alternative sugar source',
+    min: 0,
+    max: 15,
+    step: 0.1,
+  },
+]
+
+const stepTitles = [
+  {
+    eyebrow: 'Step 1 of 4',
+    title: 'Create a model session',
+    description: 'Start the demo with a protein FASTA file and attach it to the closest precomputed optimization profile.',
+  },
+  {
+    eyebrow: 'Step 2 of 4',
+    title: 'Choose an exploration path',
+    description: 'Pick the workflow you want to enter first. You can still switch inside the workspace.',
+  },
+  {
+    eyebrow: 'Step 3 of 4',
+    title: 'Explore candidate conditions',
+    description: 'Move between recommended and manual exploration without leaving the same workspace.',
+  },
+  {
+    eyebrow: 'Step 4 of 4',
+    title: 'Review the strongest signal',
+    description: 'Summarize what the model currently suggests and what to try next.',
+  },
+]
+
+const currentStep = ref(0)
+const stepDirection = ref('forward')
+const activeMode = ref('recommended')
 const uploadFile = ref(null)
-const uploadStatus = ref('No model session yet')
-const uploadMessage = ref('Use protein FASTA input for the current CarveMe-based demo session.')
-const uploadLoading = ref(false)
+const uploadFileName = ref('')
+const sessionId = ref('')
+const modelPath = ref('')
+const errorMessage = ref('')
+const infoMessage = ref('')
+const mockResults = ref({})
+const selectedMockAccession = ref('')
 
-const optimum = ref(null)
-const candidates = ref([])
-const evaluation = ref(null)
 const loading = reactive({
-  optimum: false,
-  candidates: false,
+  upload: false,
   evaluation: false,
 })
 
-const errorMessage = ref('')
-
-const parameterFields = [
-  { key: 'EX_glc__D_e', label: 'Glucose', hint: 'Primary carbon source', min: 0, max: 20, step: 0.5 },
-  { key: 'EX_nh4_e', label: 'Ammonium', hint: 'Primary nitrogen source', min: 0, max: 10, step: 0.5 },
-  { key: 'EX_pi_e', label: 'Phosphate', hint: 'Phosphorus availability', min: 0, max: 10, step: 0.5 },
-  { key: 'EX_so4_e', label: 'Sulfate', hint: 'Sulfur availability', min: 0, max: 10, step: 0.5 },
-  { key: 'EX_o2_e', label: 'Oxygen', hint: 'Aeration proxy', min: 0, max: 100, step: 5 },
-]
-
-const parameters = reactive(
-  parameterFields.reduce((accumulator, field) => {
-    accumulator[field.key] = field.key === 'EX_o2_e' ? 20 : field.key === 'EX_glc__D_e' ? 10 : 5
-    return accumulator
-  }, {}),
-)
-
-const topK = ref(5)
-
-const candidateMaxScore = computed(() => {
-  if (!candidates.value.length) return 1
-  return Math.max(...candidates.value.map((candidate) => candidate.score ?? 0), 1)
+const parameters = reactive({
+  EX_cellb_e: 0.1,
+  EX_glc__D_e: 0.1,
+  EX_glyc_e: 0.1,
+  EX_nh4_e: 0.1,
+  EX_o2_e: 2,
+  EX_pi_e: 0.1,
+  EX_so4_e: 2,
+  EX_xyl__D_e: 0.1,
 })
 
-const formattedEvaluationDiagnostics = computed(() => {
-  if (!evaluation.value?.diagnostics) return []
+const topK = ref(5)
+const selectedCandidateIndex = ref(0)
+const evaluation = ref(null)
+
+const sessionReady = computed(() => Boolean(sessionId.value))
+const currentCopy = computed(() => {
+  if (currentStep.value !== 2) {
+    return stepTitles[currentStep.value]
+  }
+
+  if (activeMode.value === 'recommended') {
+    return {
+      eyebrow: 'Step 3 of 4',
+      title: 'Review optimization suggestions',
+      description: 'Inspect the precomputed best condition and compare the strongest suggested media settings for the selected demo profile.',
+    }
+  }
+
+  return {
+    eyebrow: 'Step 3 of 4',
+    title: 'Simulate a parameter set',
+    description: 'Adjust a small set of media parameters and run a live model simulation with the current GEM session.',
+  }
+})
+const profileOptions = computed(() => Object.keys(mockResults.value).sort())
+const mockRecordsForSelection = computed(() =>
+  selectedMockAccession.value ? mockResults.value[selectedMockAccession.value] ?? [] : [],
+)
+
+const bestAvailableCandidate = computed(() => {
+  if (!mockRecordsForSelection.value.length) {
+    return null
+  }
+
+  const best = [...mockRecordsForSelection.value].sort((left, right) => left.cost - right.cost)[0]
+  return normalizeMockCandidate(best)
+})
+
+const displayCandidates = computed(() => {
+  if (!mockRecordsForSelection.value.length) {
+    return []
+  }
+
+  const candidateList = [...mockRecordsForSelection.value]
+    .sort((left, right) => left.cost - right.cost)
+    .slice(0, topK.value)
+    .map(normalizeMockCandidate)
+
+  const costs = candidateList
+    .map((candidate) => Number(candidate.cost ?? 0))
+    .filter((value) => Number.isFinite(value))
+
+  const minCost = Math.min(...costs)
+  const maxCost = Math.max(...costs)
+
+  return candidateList.map((candidate) => {
+    const cost = Number(candidate.cost ?? 0)
+    const ratio = maxCost === minCost ? 1 : (maxCost - cost) / (maxCost - minCost)
+    return {
+      ...candidate,
+      barWidth: `${35 + ratio * 65}%`,
+    }
+  })
+})
+
+const selectedDisplayCandidate = computed(() => {
+  if (!displayCandidates.value.length) {
+    return bestAvailableCandidate.value
+  }
+
+  const safeIndex = Math.min(selectedCandidateIndex.value, displayCandidates.value.length - 1)
+  return displayCandidates.value[safeIndex]
+})
+
+const diagnosticsEntries = computed(() => {
+  if (!evaluation.value?.diagnostics) {
+    return []
+  }
+
   return Object.entries(evaluation.value.diagnostics)
 })
 
-const bestCandidatePreview = computed(() => {
-  if (optimum.value) return optimum.value
-  if (candidates.value.length) return candidates.value[0]
-  return null
+const summaryNarrative = computed(() => {
+  if (evaluation.value && bestAvailableCandidate.value) {
+    return 'The mock optimization profile gives you the lowest-cost candidate, while the manual run shows how your custom condition behaves in the live model.'
+  }
+
+  if (bestAvailableCandidate.value) {
+    return 'The strongest available recommendation currently comes from the precomputed optimization profile.'
+  }
+
+  if (evaluation.value) {
+    return 'A manual evaluation is available, but no recommended candidate has been fetched yet.'
+  }
+
+  return 'Run either recommended or manual exploration to generate an actionable summary.'
 })
 
-function onFileChange(event) {
-  const [file] = event.target.files ?? []
-  if (!file) {
-    uploadFile.value = null
-    return
-  }
-
-  const lowerName = file.name.toLowerCase()
-  const isAllowed = ALLOWED_UPLOAD_SUFFIXES.some((suffix) => lowerName.endsWith(suffix))
-
-  if (!isAllowed) {
-    uploadFile.value = null
-    errorMessage.value =
-      'Unsupported file type. Please upload a protein FASTA file (.faa, .fa, or .fasta).'
-    event.target.value = ''
-    return
-  }
-
-  clearError()
-  uploadFile.value = file
-}
-
-function updateMode(nextMode) {
-  mode.value = nextMode
-}
-
-function updateTargetObjective(nextObjective) {
-  targetObjective.value = nextObjective
-}
-
-function updateTopK(nextValue) {
-  topK.value = Math.min(Math.max(Number(nextValue) || 1, 1), 20)
-}
-
-function updateParameter({ key, value }) {
-  parameters[key] = value
-}
-
-function applyCandidate(candidate) {
-  for (const field of parameterFields) {
-    if (candidate.parameters[field.key] != null) {
-      parameters[field.key] = candidate.parameters[field.key]
-    }
-  }
-  mode.value = 'manual'
-}
-
-function clearError() {
+function resetError() {
   errorMessage.value = ''
 }
 
-async function apiRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, options)
-  const data = await response.json().catch(() => null)
-
-  if (!response.ok) {
-    const message =
-      data?.error?.message ??
-      data?.detail ??
-      `Request failed with status ${response.status}.`
-    throw new Error(message)
-  }
-
-  return data
+function setError(message) {
+  errorMessage.value = message || 'The request failed.'
 }
 
-async function handleUpload() {
-  clearError()
-  if (!uploadFile.value) {
-    errorMessage.value = 'Choose a file before starting a workspace session.'
+function setInfo(message) {
+  infoMessage.value = message || ''
+}
+
+function isAllowedFile(fileName) {
+  const lowerName = fileName.toLowerCase()
+  return ALLOWED_UPLOAD_SUFFIXES.some((suffix) => lowerName.endsWith(suffix))
+}
+
+function onFileChange(event) {
+  resetError()
+  setInfo('')
+  const file = event.target.files?.[0]
+
+  if (!file) {
+    uploadFile.value = null
+    uploadFileName.value = ''
     return
   }
 
-  uploadLoading.value = true
+  if (!isAllowedFile(file.name)) {
+    uploadFile.value = null
+    uploadFileName.value = ''
+    event.target.value = ''
+    setError('Unsupported file type. Please upload a protein FASTA file (.faa, .fa, or .fasta).')
+    return
+  }
+
+  uploadFile.value = file
+  uploadFileName.value = file.name
+}
+
+function toUiMagnitude(value) {
+  return Number(Math.abs(Number(value ?? 0)).toFixed(3))
+}
+
+function toModelBound(value) {
+  return -Math.abs(Number(value ?? 0))
+}
+
+function formatDecimal(value) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? numericValue.toFixed(3) : 'N/A'
+}
+
+function normalizeMockCandidate(record) {
+  return {
+    id: record.config_id,
+    cost: Number(record.cost),
+    status: record.status,
+    time: record.time,
+    parameters: Object.fromEntries(
+      Object.entries(record.config).map(([key, value]) => [key, toUiMagnitude(value)]),
+    ),
+    rawParameters: record.config,
+    metadata: {
+      config_id: record.config_id,
+      status: record.status,
+      time: record.time,
+      cpu_time: record.cpu_time,
+    },
+  }
+}
+
+function syncParametersFromCandidate(candidate) {
+  if (!candidate?.parameters) {
+    return
+  }
+
+  parameterFields.forEach((field) => {
+    if (typeof candidate.parameters[field.key] === 'number') {
+      parameters[field.key] = candidate.parameters[field.key]
+    }
+  })
+}
+
+async function parseError(response) {
   try {
-    const formData = new FormData()
-    formData.append('file', uploadFile.value)
-    const data = await apiRequest('/api/upload', {
+    const payload = await response.json()
+
+    if (payload?.error?.message) {
+      return payload.error.message
+    }
+
+    if (payload?.detail) {
+      return typeof payload.detail === 'string' ? payload.detail : JSON.stringify(payload.detail)
+    }
+  } catch {
+    return `Request failed with status ${response.status}.`
+  }
+
+  return `Request failed with status ${response.status}.`
+}
+
+async function uploadGenome() {
+  resetError()
+  setInfo('')
+
+  if (!selectedMockAccession.value) {
+    setError('Select a demo profile before uploading your FASTA file.')
+    return
+  }
+
+  if (!uploadFile.value) {
+    setError('Select a protein FASTA file before starting the session.')
+    return
+  }
+
+  const formData = new FormData()
+  formData.append('file', uploadFile.value)
+
+  loading.upload = true
+
+  try {
+    const response = await fetch(`${API_PREFIX}/upload`, {
       method: 'POST',
       body: formData,
     })
 
-    sessionId.value = data.session_id
-    uploadStatus.value = 'Session ready'
-    uploadMessage.value = `Model session created for ${uploadFile.value.name}.`
-    optimum.value = null
-    candidates.value = []
-    evaluation.value = null
+    if (!response.ok) {
+      throw new Error(await parseError(response))
+    }
+
+    const payload = await response.json()
+    sessionId.value = payload.session_id
+    modelPath.value = payload.model_path
+    if (selectedMockAccession.value) {
+      const firstMockCandidate = normalizeMockCandidate(mockResults.value[selectedMockAccession.value][0])
+      syncParametersFromCandidate(firstMockCandidate)
+      selectedCandidateIndex.value = 0
+      setInfo(`Using demo profile ${selectedMockAccession.value}.`)
+    }
+
+    currentStep.value = 1
   } catch (error) {
-    errorMessage.value = error.message
-    uploadStatus.value = 'Upload failed'
+    setError(error instanceof Error ? error.message : 'The upload request failed.')
   } finally {
-    uploadLoading.value = false
+    loading.upload = false
   }
 }
 
 async function fetchOptimum() {
-  if (!sessionId.value) {
-    errorMessage.value = 'Create a session before requesting optimized conditions.'
-    return
-  }
+  resetError()
 
-  clearError()
-  loading.optimum = true
-  try {
-    const data = await apiRequest('/api/optimum', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId.value,
-        target_objective: targetObjective.value,
-      }),
-    })
-    optimum.value = data.optimum
-  } catch (error) {
-    errorMessage.value = error.message
-  } finally {
-    loading.optimum = false
+  if (!sessionReady.value) {
+    setError('Create a session before reviewing optimization suggestions.')
   }
 }
 
 async function fetchCandidates() {
-  if (!sessionId.value) {
-    errorMessage.value = 'Create a session before requesting candidate conditions.'
-    return
-  }
+  resetError()
 
-  clearError()
-  loading.candidates = true
-  try {
-    const data = await apiRequest('/api/candidates', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId.value,
-        top_k: topK.value,
-        target_objective: targetObjective.value,
-      }),
-    })
-    candidates.value = data.candidates ?? []
-  } catch (error) {
-    errorMessage.value = error.message
-  } finally {
-    loading.candidates = false
+  if (!sessionReady.value) {
+    setError('Create a session before reviewing optimization suggestions.')
   }
 }
 
-async function handleEvaluate() {
-  if (!sessionId.value) {
-    errorMessage.value = 'Create a session before running a manual evaluation.'
+async function runEvaluation() {
+  resetError()
+
+  if (!sessionReady.value) {
+    setError('Create a session before running a manual evaluation.')
     return
   }
 
-  clearError()
   loading.evaluation = true
+
   try {
-    evaluation.value = await apiRequest('/api/evaluate', {
+    const response = await fetch(`${API_PREFIX}/evaluate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: sessionId.value,
         parameters: Object.fromEntries(
-          Object.entries(parameters).map(([key, value]) => [key, Number(value)]),
+          Object.entries(parameters).map(([key, value]) => [key, toModelBound(value)]),
         ),
-        target_objective: targetObjective.value,
       }),
     })
+
+    if (!response.ok) {
+      throw new Error(await parseError(response))
+    }
+
+    evaluation.value = await response.json()
   } catch (error) {
-    errorMessage.value = error.message
+    setError(error instanceof Error ? error.message : 'The evaluation request failed.')
   } finally {
     loading.evaluation = false
   }
 }
+
+function applyCandidate(candidate) {
+  syncParametersFromCandidate(candidate)
+  activeMode.value = 'manual'
+}
+
+function goNext() {
+  if (currentStep.value === 0 && !sessionReady.value) {
+    setError('Start a session before moving to the next step.')
+    return
+  }
+
+  if (currentStep.value === 1) {
+    enterWorkspace(activeMode.value)
+    return
+  }
+
+  if (currentStep.value < 3) {
+    stepDirection.value = 'forward'
+    currentStep.value += 1
+  }
+}
+
+function goBack() {
+  resetError()
+  if (currentStep.value > 0) {
+    stepDirection.value = 'backward'
+    currentStep.value -= 1
+  }
+}
+
+function enterWorkspace(mode) {
+  activeMode.value = mode
+  stepDirection.value = 'forward'
+  currentStep.value = 2
+}
+
+function switchWorkspaceMode(mode) {
+  activeMode.value = mode
+}
+
+function selectCandidate(index) {
+  selectedCandidateIndex.value = index
+}
+
+const transitionName = computed(() =>
+  stepDirection.value === 'forward' ? 'card-slide-forward' : 'card-slide-backward',
+)
+
+async function loadMockResults() {
+  try {
+    const response = await fetch(DEFAULT_MOCK_PATH)
+    if (!response.ok) {
+      throw new Error(`Mock data request failed with status ${response.status}.`)
+    }
+
+    mockResults.value = await response.json()
+    if (!selectedMockAccession.value) {
+      selectedMockAccession.value = Object.keys(mockResults.value)[0] ?? ''
+    }
+  } catch (error) {
+    setError(error instanceof Error ? error.message : 'The mock data request failed.')
+  }
+}
+
+onMounted(() => {
+  loadMockResults()
+})
 </script>
 
 <template>
   <div class="app-shell">
-    <div class="background-ornament background-ornament-left"></div>
-    <div class="background-ornament background-ornament-right"></div>
+    <div class="background-orb background-orb-left"></div>
+    <div class="background-orb background-orb-right"></div>
 
-    <HeroSection
-      :upload-status="uploadStatus"
-      :upload-message="uploadMessage"
-      :session-id="sessionId"
-    />
+    <header class="brand-strip">
+      <div>
+        <p class="eyebrow">BioX Hackathon MVP</p>
+        <h1>MediaOpt</h1>
+      </div>
+    </header>
 
-    <ErrorBanner v-if="errorMessage" :message="errorMessage" />
+    <div class="card-stack">
+      <Transition :name="transitionName" mode="out-in">
+        <AppCardShell
+          :key="currentStep"
+          :eyebrow="currentCopy.eyebrow"
+          :title="currentCopy.title"
+          :description="currentCopy.description"
+        >
+          <template #body>
+            <UploadStage
+              v-if="currentStep === 0"
+              :upload-file-name="uploadFileName"
+              :upload-loading="loading.upload"
+              :profile-options="profileOptions"
+              :selected-profile="selectedMockAccession"
+              @file-change="onFileChange"
+              @update:selected-profile="selectedMockAccession = $event"
+            />
 
-    <main class="workspace-grid">
-      <UploadPanel
-        :session-id="sessionId"
-        :upload-file-name="uploadFile?.name || ''"
-        :upload-loading="uploadLoading"
-        :target-objective="targetObjective"
-        @file-change="onFileChange"
-        @upload="handleUpload"
-        @update:target-objective="updateTargetObjective"
-      />
+            <ModeStage
+              v-else-if="currentStep === 1"
+              :mode="activeMode"
+              :session-ready="sessionReady"
+              @choose="enterWorkspace"
+              @update:mode="activeMode = $event"
+            />
 
-      <ModePanel
-        :mode="mode"
-        :session-ready="Boolean(sessionId)"
-        :top-k="topK"
-        :loading-optimum="loading.optimum"
-        :loading-candidates="loading.candidates"
-        @update:mode="updateMode"
-        @update:top-k="updateTopK"
-        @fetch-optimum="fetchOptimum"
-        @fetch-candidates="fetchCandidates"
-      />
+            <WorkspaceStage
+              v-else-if="currentStep === 2"
+              :mode="activeMode"
+              :session-ready="sessionReady"
+              :mock-accession="selectedMockAccession"
+              :top-k="topK"
+              :best-candidate="bestAvailableCandidate"
+              :candidates="displayCandidates"
+              :selected-candidate="selectedDisplayCandidate"
+              :selected-candidate-index="selectedCandidateIndex"
+              :evaluation="evaluation"
+              :diagnostics="diagnosticsEntries"
+              :parameters="parameters"
+              :parameter-fields="parameterFields"
+              :format-decimal="formatDecimal"
+              :loading-evaluation="loading.evaluation"
+              @switch-mode="switchWorkspaceMode"
+              @select-candidate="selectCandidate"
+              @update:top-k="topK = $event"
+              @apply-candidate="applyCandidate"
+              @update-parameter="parameters[$event.key] = $event.value"
+              @evaluate="runEvaluation"
+            />
 
-      <SummaryPanel
-        :best-candidate="bestCandidatePreview"
-        :parameter-fields="parameterFields"
-        :target-objective="targetObjective"
-      />
+            <SummaryStage
+              v-else
+              :best-candidate="bestAvailableCandidate"
+              :evaluation="evaluation"
+              :parameter-fields="parameterFields"
+              :mock-accession="selectedMockAccession"
+              :summary-narrative="summaryNarrative"
+              :format-decimal="formatDecimal"
+            />
+          </template>
 
-      <CandidatesPanel
-        :candidates="candidates"
-        :candidate-max-score="candidateMaxScore"
-        @apply-candidate="applyCandidate"
-      />
+          <template #footer-left>
+            <button
+              v-if="currentStep > 0"
+              class="ghost-button"
+              @click="goBack"
+            >
+              Back
+            </button>
+          </template>
 
-      <ManualEvaluationPanel
-        :session-ready="Boolean(sessionId)"
-        :parameter-fields="parameterFields"
-        :parameters="parameters"
-        :loading-evaluation="loading.evaluation"
-        @update-parameter="updateParameter"
-        @evaluate="handleEvaluate"
-      />
+          <template #footer-center>
+            <p v-if="errorMessage" class="inline-error">{{ errorMessage }}</p>
+            <p v-else-if="infoMessage" class="footnote">{{ infoMessage }}</p>
+            <p v-else class="footnote">
+              Demo input currently uses protein FASTA for the CarveMe-based workflow.
+            </p>
+          </template>
 
-      <DiagnosticsPanel
-        :evaluation="evaluation"
-        :diagnostics="formattedEvaluationDiagnostics"
-      />
-    </main>
+          <template #footer-right>
+            <button
+              class="primary-button"
+              :disabled="currentStep === 3 || (currentStep === 0 && (loading.upload || !selectedMockAccession))"
+              @click="currentStep === 0 ? uploadGenome() : goNext()"
+            >
+              {{
+                currentStep === 0
+                  ? (loading.upload ? 'Preparing workspace...' : 'Upload and continue')
+                  : currentStep === 1
+                    ? (
+                        activeMode === 'recommended'
+                          ? 'Continue with optimization suggestions'
+                          : 'Continue with parameter simulation'
+                      )
+                  : currentStep === 2
+                    ? 'Review summary'
+                    : 'Next step'
+              }}
+            </button>
+          </template>
+        </AppCardShell>
+      </Transition>
+    </div>
   </div>
 </template>

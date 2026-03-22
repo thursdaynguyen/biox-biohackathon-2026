@@ -1,14 +1,17 @@
 import cobra
 import os
+from pathlib import Path
+from typing import Any
 
 
-def load_and_prep_model(sbml_path):
-    """Loads the model and ensures it uses a fast solver."""
-    if not os.path.exists(sbml_path):
-        raise FileNotFoundError(f"Could not find model at: {sbml_path}")
+def load_and_prep_model(sbml_path: str | os.PathLike[str]) -> cobra.Model:
+    """Loads the model from disk and ensures it uses a fast solver."""
+    path = Path(sbml_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Could not find model at: {path}")
 
-    print(f"Loading model: {sbml_path}...")
-    model = cobra.io.read_sbml_model(sbml_path)
+    print(f"Loading model: {path}...")
+    model = cobra.io.read_sbml_model(path)
     model.solver = "glpk"
     return model
 
@@ -16,19 +19,30 @@ def load_and_prep_model(sbml_path):
 # ==========================================
 # 1. MEDIA SELECTION & GAP-FILLING
 # ==========================================
-def apply_media_and_gapfill(current_model_path, media, o2_bounds=None):
+def _ensure_model(model_or_path: Any) -> cobra.Model:
+    """Return a cobra.Model whether input is a model or a path."""
+    if isinstance(model_or_path, cobra.Model):
+        return model_or_path
+    return load_and_prep_model(str(model_or_path))
+
+
+def apply_media_and_gapfill(model_or_path: Any, media, o2_bounds=None, merge_with_existing: bool = True) -> cobra.Model:
+    """Apply media bounds to a model (path or instance) and return the model.
+
+    - Accepts either a cobra.Model or a path to SBML.
+    - merge_with_existing controls whether to start from the current medium or a blank dict.
+    """
     print("\n--- STEP 1: Applying Custom Media ---")
 
-    model = load_and_prep_model(str(current_model_path))
+    model = _ensure_model(model_or_path)
 
     if media is None:
         raise ValueError(
             "media dict is required; provide all exchange bounds from the UI sliders."
         )
-    target_medium = model.medium.copy()
-    target_medium.update(media)
 
-    target_medium = model.medium.copy()
+    base_medium = model.medium.copy() if merge_with_existing else {}
+    target_medium = base_medium.copy()
     target_medium.update(media)
 
     # o2_lower, o2_upper = o2_bounds if o2_bounds else (-20.0, 1000.0)
