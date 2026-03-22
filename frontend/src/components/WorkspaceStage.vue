@@ -236,11 +236,11 @@ function formatDiagnosticValue(value) {
           <p class="section-kicker">Key outputs</p>
           <div v-if="evaluation" class="diagnostic-grid">
             <div class="diagnostic-card">
-              <span>objective_value</span>
+              <span>growth rate</span>
               <strong>{{ formatDecimal(evaluation.objective_value) }}</strong>
             </div>
             <div class="diagnostic-card">
-              <span>byproduct_burden</span>
+              <span>byproduct burden</span>
               <strong>{{ formatDiagnosticValue(evaluation.byproduct_burden) }}</strong>
             </div>
             <div class="diagnostic-card">

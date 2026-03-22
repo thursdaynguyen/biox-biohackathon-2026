@@ -26,10 +26,7 @@ defineEmits(['file-change', 'update:selected-profile'])
     <div class="content-block lead-block">
       <p class="section-kicker">Working input</p>
       <h3>Upload a protein FASTA file</h3>
-      <p class="section-copy">
-        The broader pipeline can support genome-oriented workflows, but this demo uses a
-        CarveMe + protein FASTA path for a more reliable live run.
-      </p>
+
     </div>
 
     <label class="field-block profile-field">

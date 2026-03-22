@@ -80,7 +80,7 @@ const parameterFields = [
 const stepTitles = [
   {
     title: 'Create a model session',
-    description: 'Start the demo with a protein FASTA file and attach it to the closest precomputed optimization profile.',
+    description: '',
   },
   {
     title: 'Choose an exploration path',
@@ -139,7 +139,7 @@ const currentCopy = computed(() => {
 
   return {
     title: 'Simulate a parameter set',
-    description: 'Adjust a small set of media parameters and run a live model simulation with the current GEM session.',
+    description: '',
   }
 })
 const profileOptions = computed(() => Object.keys(mockResults.value).sort())
@@ -547,7 +547,7 @@ onMounted(() => {
             <p v-if="errorMessage" class="inline-error">{{ errorMessage }}</p>
             <p v-else-if="infoMessage" class="footnote">{{ infoMessage }}</p>
             <p v-else class="footnote">
-              Demo input currently uses protein FASTA for the CarveMe-based workflow.
+              
             </p>
           </template>
 
