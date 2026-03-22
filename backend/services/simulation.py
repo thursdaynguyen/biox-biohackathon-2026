@@ -18,6 +18,17 @@ def extract_fluxes(solution: cobra.Solution) -> dict[str, float]:
     }
 
 
+def normalize_medium_parameters(parameters: dict[str, float]) -> dict[str, float]:
+    """Translate UI exchange-style values into cobra model.medium uptake magnitudes."""
+    normalized: dict[str, float] = {}
+
+    for reaction_id, value in parameters.items():
+        numeric_value = float(value)
+        normalized[reaction_id] = abs(numeric_value)
+
+    return normalized
+
+
 def run_simulation_model(payload: EvaluateRequest) -> cobra.Solution:
     if not payload.parameters:
         raise AppError(
@@ -35,7 +46,11 @@ def run_simulation_model(payload: EvaluateRequest) -> cobra.Solution:
         )
 
     try:
-        model = apply_media_and_gapfill(str(current_model_path), payload.parameters, payload.o2_bounds)
+        model = apply_media_and_gapfill(
+            str(current_model_path),
+            normalize_medium_parameters(payload.parameters),
+            payload.o2_bounds,
+        )
         solution = model.optimize()
     except AppError:
         raise
