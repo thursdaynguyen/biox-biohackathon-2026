@@ -35,8 +35,8 @@ def run_simulation_model(payload: EvaluateRequest) -> cobra.Solution:
         )
 
     try:
-        model = load_and_prep_model(str(current_model_path))
-        model = apply_media_and_gapfill(model, payload.parameters, payload.o2_bounds)
+        # model = load_and_prep_model(str(current_model_path))
+        model = apply_media_and_gapfill(str(current_model_path), payload.parameters, payload.o2_bounds)
         solution = model.optimize()
     except AppError:
         raise

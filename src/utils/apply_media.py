@@ -16,35 +16,40 @@ def load_and_prep_model(sbml_path):
 # ==========================================
 # 1. MEDIA SELECTION & GAP-FILLING
 # ==========================================
-def apply_media_and_gapfill(model, media, o2_bounds=None):
+def apply_media_and_gapfill(current_model_path, media, o2_bounds=None):
     print("\n--- STEP 1: Applying Custom Media ---")
+
+    model = load_and_prep_model(str(current_model_path))
 
     if media is None:
         raise ValueError(
             "media dict is required; provide all exchange bounds from the UI sliders."
         )
 
-    o2_lower, o2_upper = o2_bounds if o2_bounds else (-20.0, 1000.0)
+    target_medium = model.medium.copy()
+    target_medium.update(media)
 
-    # --- PATCH 1: THE OXYGEN PIPE ---
-    if "EX_o2_e" not in [rxn.id for rxn in model.exchanges]:
-        print(
-            " -> [Fix] Oxygen exchange missing! Artificially adding EX_o2_e to the model..."
-        )
-        try:
-            o2_rxn = cobra.Reaction("EX_o2_e")
-            o2_rxn.name = "O2 exchange"
-            o2_rxn.lower_bound = o2_lower
-            o2_rxn.upper_bound = o2_upper
-            o2_rxn.add_metabolites({model.metabolites.get_by_id("o2_e"): -1.0})
-            model.add_reactions([o2_rxn])
-        except KeyError:
-            print(" -> [Error] 'o2_e' metabolite doesn't exist in this model at all.")
+    # o2_lower, o2_upper = o2_bounds if o2_bounds else (-20.0, 1000.0)
+
+    # # --- PATCH 1: THE OXYGEN PIPE ---
+    # if "EX_o2_e" not in [rxn.id for rxn in model.exchanges]:
+    #     print(
+    #         " -> [Fix] Oxygen exchange missing! Artificially adding EX_o2_e to the model..."
+    #     )
+    #     try:
+    #         o2_rxn = cobra.Reaction("EX_o2_e")
+    #         o2_rxn.name = "O2 exchange"
+    #         o2_rxn.lower_bound = o2_lower
+    #         o2_rxn.upper_bound = o2_upper
+    #         o2_rxn.add_metabolites({model.metabolites.get_by_id("o2_e"): -1.0})
+    #         model.add_reactions([o2_rxn])
+    #     except KeyError:
+    #         print(" -> [Error] 'o2_e' metabolite doesn't exist in this model at all.")
 
     safe_medium = {}
     model_exchange_ids = [rxn.id for rxn in model.exchanges]
 
-    for rxn_id, bound in media.items():
+    for rxn_id, bound in target_medium.items():
         if rxn_id in model_exchange_ids:
             safe_medium[rxn_id] = bound
         else:

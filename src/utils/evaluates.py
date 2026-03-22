@@ -111,7 +111,7 @@ def evaluate_TRY_metrics(
     print(f" -> Yield (Efficiency):  {yield_metric:.4f} mol product / mol carbon")
     print(f" -> Titer (Estimated):   {titer:.4f} mmol/L (after {sim_time_h}h)")
 
-    return {"Rate": rate, "Yield": yield_metric, "Titer": titer}
+    return {"Titer": titer, "Rate": rate, "Yield": yield_metric}
 
 
 # ==========================================
