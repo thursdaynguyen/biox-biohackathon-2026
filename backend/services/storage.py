@@ -14,6 +14,7 @@ from backend.schemas import UploadResponse
 BASE_DIR = Path(__file__).resolve().parents[2]
 SESSIONS_DIR = BASE_DIR / "data" / "sessions"
 SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+ALLOWED_UPLOAD_SUFFIXES = {".faa", ".fa", ".fasta"}
 
 
 def session_dir(session_id: str) -> Path:
@@ -92,6 +93,14 @@ async def create_session_from_upload(file: UploadFile) -> UploadResponse:
         raise AppError(
             code="INVALID_INPUT",
             message="Uploaded file must include a filename.",
+            status_code=400,
+        )
+
+    suffix = Path(file.filename).suffix.lower()
+    if suffix not in ALLOWED_UPLOAD_SUFFIXES:
+        raise AppError(
+            code="INVALID_INPUT",
+            message="Unsupported file type. Please upload a protein FASTA file (.faa, .fa, or .fasta).",
             status_code=400,
         )
 
