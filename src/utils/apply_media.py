@@ -25,6 +25,8 @@ def apply_media_and_gapfill(current_model_path, media, o2_bounds=None):
         raise ValueError(
             "media dict is required; provide all exchange bounds from the UI sliders."
         )
+    target_medium = model.medium.copy()
+    target_medium.update(media)
 
     target_medium = model.medium.copy()
     target_medium.update(media)
