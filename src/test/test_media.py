@@ -11,6 +11,9 @@ def load_and_prep_model(sbml_path):
     print(f"Loading model: {sbml_path}...")
     model = cobra.io.read_sbml_model(sbml_path)
     model.solver = "glpk"
+
+    ## print the model's current objective function to verify it's loaded correctly
+    print(f"Current Objective: {model.optimize().objective_value:.4f} 1/hr")
     return model
 
 
@@ -51,7 +54,7 @@ def apply_media_and_gapfill(model, media_type):
             print(f" -> [Error] Could not calculate survival recipe: {e}")
             survival_recipe = {}
 
-    # --- STEP B: DEFINE YOUR BASE MEDIA ---
+    # --- STEP B: DEFINE YOUR BASE MEDIA (overlaid onto model's current medium) ---
     base_media = {
         "EX_glc__D_e": 10.0,  # Primary Carbon
         "EX_nh4_e": -5.0,  # Primary Nitrogen
@@ -61,6 +64,10 @@ def apply_media_and_gapfill(model, media_type):
         "EX_h_e": 1000.0,
         "EX_o2_e": 1000.0,
     }
+
+    # Start from the model's built-in medium so we inherit any rich defaults
+    merged_media = model.medium.copy()
+    merged_media.update(base_media)
 
     if media_type == "Complex":
         yeast_extract_proxy = {
@@ -88,8 +95,8 @@ def apply_media_and_gapfill(model, media_type):
         base_media.update(yeast_extract_proxy)
 
     # --- STEP C: THE LAZY MERGE ---
-    # We take your base media, and inject whatever the model demands to survive
-    final_media = base_media.copy()
+    # We take the baseline+user media, and inject whatever the model demands to survive
+    final_media = merged_media.copy()
 
     for rxn_id, required_flux in survival_recipe.items():
         # Only inject the nutrient if it's not already in our media
@@ -257,14 +264,19 @@ def calculate_fitness_score(metrics, yield_weight=0.7, rate_weight=0.3):
 # MAIN EXECUTION BLOCK
 # ==========================================
 if __name__ == "__main__":
-    MODEL_PATH = "/Users/taindp/workspace/personal/biox-biohackathon-2026/data/out.cleaned.xml"  # <-- UPDATE THIS PATH TO YOUR DRAFT SBML MODEL
-
+    # MODEL_PATH = "/Users/taindp/workspace/personal/biox-biohackathon-2026/data/GCA_000182925.2_gapfilled.xml"  # <-- UPDATE THIS PATH TO YOUR DRAFT SBML MODEL
+    # MODEL_PATH = "/Users/taindp/workspace/personal/biox-biohackathon-2026/data/yeast-GEM.xml"  # <-- UPDATE THIS PATH TO YOUR DRAFT SBML MODEL
+    # MODEL_PATH = "/Users/taindp/workspace/personal/biox-biohackathon-2026/data/Genome_assembly_ASM18445v3/ncbi_dataset/data/GCA_000184455.3/gem.xml"
+    MODEL_PATH = "/Users/taindp/workspace/personal/biox-biohackathon-2026/data/MG1655/ncbi_dataset/data/GCA_000005845.2/gem.xml"
     try:
         fungal_model = load_and_prep_model(MODEL_PATH)
 
         # NOTE: Changing to 'Complex' here just so you can actually see the TRY math work,
         # since we know Minimal currently results in a 0.00 growth rate!
-        fungal_model = apply_media_and_gapfill(fungal_model, media_type="Minimal")
+        fungal_model = apply_media_and_gapfill(fungal_model, media_type="Complex")
+        sol = fungal_model.optimize()
+        print(f"Growth Rate: {sol.objective_value:.4f} 1/hr")
+
 
         evaluate_shadow_prices(fungal_model)
 
