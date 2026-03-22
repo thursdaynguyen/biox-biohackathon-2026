@@ -129,7 +129,7 @@ const parameters = reactive({
   EX_xyl__D_e: 0.1,
 })
 
-const topK = ref(5)
+const TOP_K = 10
 const selectedCandidateIndex = ref(0)
 const evaluation = ref(null)
 
@@ -174,7 +174,7 @@ const displayCandidates = computed(() => {
 
   const candidateList = [...mockRecordsForSelection.value]
     .sort((left, right) => left.cost - right.cost)
-    .slice(0, topK.value)
+    .slice(0, TOP_K)
     .map(normalizeMockCandidate)
 
   const costs = candidateList
@@ -467,7 +467,13 @@ function switchWorkspaceMode(mode) {
 }
 
 function selectCandidate(index) {
-  selectedCandidateIndex.value = index
+  if (!displayCandidates.value.length) {
+    selectedCandidateIndex.value = 0
+    return
+  }
+
+  const maxIndex = displayCandidates.value.length - 1
+  selectedCandidateIndex.value = Math.max(0, Math.min(index, maxIndex))
 }
 
 const transitionName = computed(() =>
@@ -539,7 +545,7 @@ onMounted(() => {
               :mode="activeMode"
               :session-ready="sessionReady"
               :mock-accession="selectedMockAccession"
-              :top-k="topK"
+              :top-k="TOP_K"
               :best-candidate="bestAvailableCandidate"
               :candidates="displayCandidates"
               :selected-candidate="selectedDisplayCandidate"
@@ -552,7 +558,6 @@ onMounted(() => {
               :loading-evaluation="loading.evaluation"
               @switch-mode="switchWorkspaceMode"
               @select-candidate="selectCandidate"
-              @update:top-k="topK = $event"
               @apply-candidate="applyCandidate"
               @update-parameter="parameters[$event.key] = $event.value"
               @evaluate="runEvaluation"

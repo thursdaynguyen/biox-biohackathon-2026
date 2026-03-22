@@ -61,7 +61,6 @@ const props = defineProps({
 defineEmits([
   'switch-mode',
   'select-candidate',
-  'update:top-k',
   'apply-candidate',
   'update-parameter',
   'evaluate',
@@ -107,16 +106,38 @@ function candidateLabel(index) {
               <p class="section-kicker">Candidate formulation</p>
               <h4 class="section-heading">Composition overview</h4>
             </div>
-            <span class="metric-badge">
-              Cost {{ selectedCandidate ? formatDecimal(selectedCandidate.cost) : 'N/A' }}
-            </span>
+            <div class="best-formulation-controls">
+              <div v-if="candidates.length" class="candidate-navigator">
+                <button
+                  class="nav-arrow"
+                  :disabled="selectedCandidateIndex <= 0"
+                  @click="$emit('select-candidate', selectedCandidateIndex - 1)"
+                >
+                  Previous
+                </button>
+                <div class="candidate-readout">
+                  <strong>{{ candidateLabel(selectedCandidateIndex) }}</strong>
+                  <span>{{ selectedCandidateIndex + 1 }} / {{ candidates.length }}</span>
+                </div>
+                <button
+                  class="nav-arrow"
+                  :disabled="selectedCandidateIndex >= candidates.length - 1"
+                  @click="$emit('select-candidate', selectedCandidateIndex + 1)"
+                >
+                  Next
+                </button>
+              </div>
+              <span class="metric-badge">
+                Cost {{ selectedCandidate ? formatDecimal(selectedCandidate.cost) : 'N/A' }}
+              </span>
+            </div>
           </div>
 
           <div v-if="selectedCandidate" class="composition-grid">
-            <TransitionGroup name="composition-swap" tag="div" class="composition-grid-inner">
+            <div class="composition-grid-inner">
               <div
                 v-for="field in parameterFields"
-                :key="`${selectedCandidate.id}-${field.key}`"
+                :key="field.key"
                 class="composition-card"
               >
                 <div class="composition-card-head">
@@ -130,7 +151,7 @@ function candidateLabel(index) {
                   ></div>
                 </div>
               </div>
-            </TransitionGroup>
+            </div>
           </div>
           <p v-else class="empty-copy">
             No optimization suggestions are available for the selected profile.
@@ -138,33 +159,12 @@ function candidateLabel(index) {
         </article>
 
         <article class="content-block compact-block">
-          <div class="inline-field">
-            <label for="top-k-input">Show top candidates</label>
-            <input
-              id="top-k-input"
-              :value="topK"
-              type="number"
-              min="1"
-              max="20"
-              @input="$emit('update:top-k', Number($event.target.value))"
-            />
-          </div>
+          <p class="section-kicker">Suggestion scope</p>
+          <h3>Top {{ topK }}</h3>
         </article>
 
-        <article class="content-block wide-block">
-          <p class="section-kicker">Candidate selector</p>
-          <div v-if="candidates.length" class="candidate-selector">
-            <button
-              v-for="(candidate, index) in candidates"
-              :key="`${index}-${candidate.cost}`"
-              class="candidate-tab"
-              :class="{ active: selectedCandidateIndex === index }"
-              @click="$emit('select-candidate', index)"
-            >
-              <strong>{{ candidateLabel(index) }}</strong>
-              <span>{{ formatDecimal(candidate.cost) }}</span>
-            </button>
-          </div>
+        <article class="content-block wide-block compact-action-block">
+          <p class="section-kicker">Next action</p>
           <div v-if="selectedCandidate" class="selector-actions">
             <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
               Send this formulation to simulation

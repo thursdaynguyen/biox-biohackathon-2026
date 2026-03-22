@@ -442,6 +442,12 @@ select {
   margin-bottom: 16px;
 }
 
+.best-formulation-controls {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+
 .metric-badge {
   display: inline-flex;
   align-items: center;
@@ -506,47 +512,49 @@ select {
   background: linear-gradient(90deg, rgba(31, 77, 58, 0.82), rgba(180, 106, 60, 0.62));
 }
 
-.candidate-selector {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+.candidate-navigator {
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
+  padding: 6px;
+  border: 1px solid rgba(43, 43, 40, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 252, 246, 0.86);
 }
 
-.candidate-tab {
+.candidate-readout {
+  min-width: 120px;
   display: grid;
-  gap: 4px;
-  padding: 14px;
-  text-align: left;
-  border: 1px solid rgba(43, 43, 40, 0.12);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 241, 231, 0.86));
-  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+  gap: 2px;
+  text-align: center;
 }
 
-.candidate-tab span {
+.candidate-readout span {
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
-.candidate-tab.active {
-  border-color: rgba(31, 77, 58, 0.26);
-  background: linear-gradient(180deg, rgba(217, 230, 221, 0.62), rgba(245, 239, 229, 0.88));
+.nav-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.nav-arrow:hover:not(:disabled) {
+  border-color: rgba(31, 77, 58, 0.16);
+  background: rgba(217, 230, 221, 0.44);
 }
 
 .selector-actions {
-  margin-top: 14px;
-}
-
-.composition-swap-enter-active,
-.composition-swap-leave-active {
-  transition: opacity 220ms ease, transform 220ms ease;
-}
-
-.composition-swap-enter-from,
-.composition-swap-leave-to {
-  opacity: 0;
-  transform: translateY(8px);
+  margin-top: 2px;
 }
 
 .emphasis-block h3,
