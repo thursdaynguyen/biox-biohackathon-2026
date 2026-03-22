@@ -558,14 +558,6 @@ onMounted(() => {
         <p class="eyebrow">BioX Hackathon MVP</p>
         <h1>MediaOpt</h1>
       </div>
-      <div class="brand-meta">
-        <span class="meta-pill" :class="{ ready: sessionReady }">
-          {{ sessionReady ? 'Session ready' : 'No active session' }}
-        </span>
-        <span v-if="selectedMockAccession" class="meta-pill objective">
-          {{ selectedMockAccession }}
-        </span>
-      </div>
     </header>
 
     <div class="card-stack">
@@ -576,17 +568,12 @@ onMounted(() => {
           :title="currentCopy.title"
           :description="currentCopy.description"
         >
-          <template #status>
-            <span v-if="sessionId" class="session-pill">{{ sessionId }}</span>
-          </template>
-
           <template #body>
             <UploadStage
               v-if="currentStep === 0"
               :upload-file-name="uploadFileName"
               :upload-loading="loading.upload"
               @file-change="onFileChange"
-              @upload="uploadGenome"
             />
 
             <ModeStage
@@ -634,8 +621,8 @@ onMounted(() => {
 
           <template #footer-left>
             <button
+              v-if="currentStep > 0"
               class="ghost-button"
-              :disabled="currentStep === 0"
               @click="goBack"
             >
               Back
@@ -653,10 +640,16 @@ onMounted(() => {
           <template #footer-right>
             <button
               class="primary-button"
-              :disabled="currentStep === 3"
-              @click="goNext"
+              :disabled="currentStep === 3 || (currentStep === 0 && loading.upload)"
+              @click="currentStep === 0 ? uploadGenome() : goNext()"
             >
-              {{ currentStep === 2 ? 'Review summary' : 'Next step' }}
+              {{
+                currentStep === 0
+                  ? (loading.upload ? 'Preparing workspace...' : 'Upload and continue')
+                  : currentStep === 2
+                    ? 'Review summary'
+                    : 'Next step'
+              }}
             </button>
           </template>
         </AppCardShell>

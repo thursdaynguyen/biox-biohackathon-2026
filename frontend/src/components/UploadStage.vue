@@ -10,7 +10,7 @@ defineProps({
   },
 })
 
-defineEmits(['file-change', 'upload'])
+defineEmits(['file-change'])
 </script>
 
 <template>
@@ -28,12 +28,14 @@ defineEmits(['file-change', 'upload'])
       <input type="file" accept=".faa,.fa,.fasta" @change="$emit('file-change', $event)" />
       <strong>{{ uploadFileName || 'Choose a .faa, .fa, or .fasta file' }}</strong>
       <span>Preferred demo input: annotated protein FASTA.</span>
-    </label>
 
-    <div class="stage-row">
-      <button class="primary-button" :disabled="uploadLoading" @click="$emit('upload')">
-        {{ uploadLoading ? 'Creating session...' : 'Start session' }}
-      </button>
-    </div>
+      <div v-if="uploadLoading" class="upload-overlay">
+        <p class="section-kicker">Preparing workspace</p>
+        <p class="loading-copy">Building your demo workspace...</p>
+        <div class="loading-meter" aria-hidden="true">
+          <span></span>
+        </div>
+      </div>
+    </label>
   </div>
 </template>
