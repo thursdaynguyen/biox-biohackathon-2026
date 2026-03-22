@@ -456,6 +456,10 @@ select {
 }
 
 .composition-grid {
+  display: block;
+}
+
+.composition-grid-inner {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
@@ -502,26 +506,47 @@ select {
   background: linear-gradient(90deg, rgba(31, 77, 58, 0.82), rgba(180, 106, 60, 0.62));
 }
 
-.comparison-stack {
+.candidate-selector {
   display: grid;
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: 10px;
 }
 
-.comparison-card {
+.candidate-tab {
   display: grid;
-  gap: 14px;
-  border: 1px solid rgba(43, 43, 40, 0.12);
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(247, 241, 231, 0.88));
-  padding: 16px;
+  gap: 4px;
+  padding: 14px;
   text-align: left;
+  border: 1px solid rgba(43, 43, 40, 0.12);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 241, 231, 0.86));
   transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
 }
 
-.comparison-matrix {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+.candidate-tab span {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.candidate-tab.active {
+  border-color: rgba(31, 77, 58, 0.26);
+  background: linear-gradient(180deg, rgba(217, 230, 221, 0.62), rgba(245, 239, 229, 0.88));
+}
+
+.selector-actions {
+  margin-top: 14px;
+}
+
+.composition-swap-enter-active,
+.composition-swap-leave-active {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.composition-swap-enter-from,
+.composition-swap-leave-to {
+  opacity: 0;
+  transform: translateY(8px);
 }
 
 .emphasis-block h3,
@@ -814,8 +839,7 @@ button:disabled {
   .mode-grid,
   .summary-grid,
   .diagnostic-grid,
-  .composition-grid,
-  .comparison-matrix {
+  .composition-grid-inner {
     grid-template-columns: 1fr;
   }
 

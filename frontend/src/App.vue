@@ -130,6 +130,7 @@ const parameters = reactive({
 })
 
 const topK = ref(5)
+const selectedCandidateIndex = ref(0)
 const evaluation = ref(null)
 
 const sessionReady = computed(() => Boolean(sessionId.value))
@@ -191,6 +192,15 @@ const displayCandidates = computed(() => {
       barWidth: `${35 + ratio * 65}%`,
     }
   })
+})
+
+const selectedDisplayCandidate = computed(() => {
+  if (!displayCandidates.value.length) {
+    return bestAvailableCandidate.value
+  }
+
+  const safeIndex = Math.min(selectedCandidateIndex.value, displayCandidates.value.length - 1)
+  return displayCandidates.value[safeIndex]
 })
 
 const diagnosticsEntries = computed(() => {
@@ -354,6 +364,7 @@ async function uploadGenome() {
     if (selectedMockAccession.value) {
       const firstMockCandidate = normalizeMockCandidate(mockResults.value[selectedMockAccession.value][0])
       syncParametersFromCandidate(firstMockCandidate)
+      selectedCandidateIndex.value = 0
       setInfo(`Using demo profile ${selectedMockAccession.value}.`)
     }
 
@@ -455,6 +466,10 @@ function switchWorkspaceMode(mode) {
   activeMode.value = mode
 }
 
+function selectCandidate(index) {
+  selectedCandidateIndex.value = index
+}
+
 const transitionName = computed(() =>
   stepDirection.value === 'forward' ? 'card-slide-forward' : 'card-slide-backward',
 )
@@ -527,6 +542,8 @@ onMounted(() => {
               :top-k="topK"
               :best-candidate="bestAvailableCandidate"
               :candidates="displayCandidates"
+              :selected-candidate="selectedDisplayCandidate"
+              :selected-candidate-index="selectedCandidateIndex"
               :evaluation="evaluation"
               :diagnostics="diagnosticsEntries"
               :parameters="parameters"
@@ -534,9 +551,8 @@ onMounted(() => {
               :format-decimal="formatDecimal"
               :loading-evaluation="loading.evaluation"
               @switch-mode="switchWorkspaceMode"
+              @select-candidate="selectCandidate"
               @update:top-k="topK = $event"
-              @fetch-optimum="fetchOptimum"
-              @fetch-candidates="fetchCandidates"
               @apply-candidate="applyCandidate"
               @update-parameter="parameters[$event.key] = $event.value"
               @evaluate="runEvaluation"

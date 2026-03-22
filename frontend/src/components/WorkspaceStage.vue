@@ -24,6 +24,14 @@ const props = defineProps({
     type: Array,
     required: true,
   },
+  selectedCandidate: {
+    type: Object,
+    default: null,
+  },
+  selectedCandidateIndex: {
+    type: Number,
+    required: true,
+  },
   evaluation: {
     type: Object,
     default: null,
@@ -52,6 +60,7 @@ const props = defineProps({
 
 defineEmits([
   'switch-mode',
+  'select-candidate',
   'update:top-k',
   'apply-candidate',
   'update-parameter',
@@ -72,6 +81,10 @@ function fieldBarWidth(candidate, key) {
   const ratio = candidateMagnitude(candidate, key) / maxMagnitudeForField(key)
   return `${Math.max(12, ratio * 100)}%`
 }
+
+function candidateLabel(index) {
+  return `Suggestion ${index + 1}`
+}
 </script>
 
 <template>
@@ -91,31 +104,33 @@ function fieldBarWidth(candidate, key) {
         <article class="content-block wide-block">
           <div class="best-formulation-head">
             <div>
-              <p class="section-kicker">Best suggested formulation</p>
+              <p class="section-kicker">Candidate formulation</p>
               <h4 class="section-heading">Composition overview</h4>
             </div>
             <span class="metric-badge">
-              Cost {{ bestCandidate ? formatDecimal(bestCandidate.cost) : 'N/A' }}
+              Cost {{ selectedCandidate ? formatDecimal(selectedCandidate.cost) : 'N/A' }}
             </span>
           </div>
 
-          <div v-if="bestCandidate" class="composition-grid">
-            <div
-              v-for="field in parameterFields"
-              :key="field.key"
-              class="composition-card"
-            >
-              <div class="composition-card-head">
-                <strong>{{ field.label }}</strong>
-                <span>{{ formatDecimal(bestCandidate.parameters?.[field.key]) }}</span>
+          <div v-if="selectedCandidate" class="composition-grid">
+            <TransitionGroup name="composition-swap" tag="div" class="composition-grid-inner">
+              <div
+                v-for="field in parameterFields"
+                :key="`${selectedCandidate.id}-${field.key}`"
+                class="composition-card"
+              >
+                <div class="composition-card-head">
+                  <strong>{{ field.label }}</strong>
+                  <span>{{ formatDecimal(selectedCandidate.parameters?.[field.key]) }}</span>
+                </div>
+                <div class="composition-track">
+                  <div
+                    class="composition-fill"
+                    :style="{ width: fieldBarWidth(selectedCandidate, field.key) }"
+                  ></div>
+                </div>
               </div>
-              <div class="composition-track">
-                <div
-                  class="composition-fill"
-                  :style="{ width: fieldBarWidth(bestCandidate, field.key) }"
-                ></div>
-              </div>
-            </div>
+            </TransitionGroup>
           </div>
           <p v-else class="empty-copy">
             No optimization suggestions are available for the selected profile.
@@ -137,35 +152,22 @@ function fieldBarWidth(candidate, key) {
         </article>
 
         <article class="content-block wide-block">
-          <p class="section-kicker">Top candidate comparison</p>
-          <div v-if="candidates.length" class="comparison-stack">
+          <p class="section-kicker">Candidate selector</p>
+          <div v-if="candidates.length" class="candidate-selector">
             <button
               v-for="(candidate, index) in candidates"
               :key="`${index}-${candidate.cost}`"
-              class="comparison-card"
-              @click="$emit('apply-candidate', candidate)"
+              class="candidate-tab"
+              :class="{ active: selectedCandidateIndex === index }"
+              @click="$emit('select-candidate', index)"
             >
-              <div class="comparison-card-head">
-                <strong>Suggestion {{ index + 1 }}</strong>
-                <span>Cost {{ formatDecimal(candidate.cost) }}</span>
-              </div>
-
-              <div class="comparison-matrix">
-                <div
-                  v-for="field in parameterFields"
-                  :key="`${candidate.id}-${field.key}`"
-                  class="comparison-cell"
-                >
-                  <span>{{ field.label }}</span>
-                  <div class="comparison-track">
-                    <div
-                      class="comparison-fill"
-                      :style="{ width: fieldBarWidth(candidate, field.key) }"
-                    ></div>
-                  </div>
-                  <strong>{{ formatDecimal(candidate.parameters?.[field.key]) }}</strong>
-                </div>
-              </div>
+              <strong>{{ candidateLabel(index) }}</strong>
+              <span>{{ formatDecimal(candidate.cost) }}</span>
+            </button>
+          </div>
+          <div v-if="selectedCandidate" class="selector-actions">
+            <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
+              Send this formulation to simulation
             </button>
           </div>
           <p v-else class="empty-copy">
