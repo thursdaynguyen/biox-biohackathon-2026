@@ -8,9 +8,9 @@ defineProps({
     type: Boolean,
     default: false,
   },
-  targetObjective: {
+  mockAccession: {
     type: String,
-    required: true,
+    default: '',
   },
   topK: {
     type: Number,
@@ -22,10 +22,6 @@ defineProps({
   },
   candidates: {
     type: Array,
-    required: true,
-  },
-  candidateMaxScore: {
-    type: Number,
     required: true,
   },
   evaluation: {
@@ -92,7 +88,9 @@ defineEmits([
           Manual
         </button>
       </div>
-      <span class="meta-note">{{ targetObjective }} objective</span>
+      <span class="meta-note">
+        {{ mockAccession ? `Mock profile: ${mockAccession}` : 'Mock profile pending' }}
+      </span>
     </div>
 
     <div class="workspace-viewport">
@@ -106,12 +104,12 @@ defineEmits([
         <section class="workspace-panel recommended-panel">
           <div class="workspace-grid">
             <article class="content-block emphasis-block">
-              <p class="section-kicker">Best available point</p>
+              <p class="section-kicker">Best mock result</p>
               <h3>
-                {{ bestCandidate?.score ?? 'No score yet' }}
+                {{ bestCandidate?.cost ?? 'No cost yet' }}
               </h3>
               <p class="section-copy">
-                {{ bestCandidate ? 'Use this as the strongest available starting point.' : 'Fetch the optimum to populate the strongest signal.' }}
+                {{ bestCandidate ? 'Lower cost indicates a stronger precomputed candidate for the demo.' : 'Fetch the optimum to populate the strongest signal.' }}
               </p>
             </article>
 
@@ -152,18 +150,18 @@ defineEmits([
               <div v-if="candidates.length" class="candidate-list">
                 <button
                   v-for="(candidate, index) in candidates"
-                  :key="`${index}-${candidate.score}`"
+                  :key="`${index}-${candidate.cost}`"
                   class="candidate-item"
                   @click="$emit('apply-candidate', candidate)"
                 >
                   <div class="candidate-copy">
                     <strong>Candidate {{ index + 1 }}</strong>
-                    <span>{{ candidate.score ?? 'N/A' }}</span>
+                    <span>Cost {{ candidate.cost ?? 'N/A' }}</span>
                   </div>
                   <div class="candidate-bar">
                     <div
                       class="candidate-fill"
-                      :style="{ width: `${((candidate.score ?? 0) / candidateMaxScore) * 100}%` }"
+                      :style="{ width: candidate.barWidth || '35%' }"
                     ></div>
                   </div>
                 </button>
@@ -216,10 +214,10 @@ defineEmits([
             </article>
 
             <article class="content-block compact-block">
-              <p class="section-kicker">Current result</p>
+              <p class="section-kicker">Live evaluation result</p>
               <h3>{{ evaluation?.objective_value ?? 'No result yet' }}</h3>
               <p class="section-copy">
-                {{ evaluation ? 'Inspect the flux snapshot below and compare it with the recommended signal.' : 'Run a manual evaluation to inspect objective values and diagnostics.' }}
+                {{ evaluation ? 'Inspect the flux snapshot below and compare it with the mock recommendation.' : 'Run a manual evaluation to inspect objective values and diagnostics.' }}
               </p>
             </article>
 

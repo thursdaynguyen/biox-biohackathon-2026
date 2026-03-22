@@ -8,13 +8,9 @@ defineProps({
     type: Boolean,
     default: false,
   },
-  targetObjective: {
-    type: String,
-    required: true,
-  },
 })
 
-defineEmits(['file-change', 'upload', 'update:target-objective'])
+defineEmits(['file-change', 'upload'])
 </script>
 
 <template>
@@ -35,17 +31,6 @@ defineEmits(['file-change', 'upload', 'update:target-objective'])
     </label>
 
     <div class="stage-row">
-      <label class="field-block">
-        <span>Objective</span>
-        <select
-          :value="targetObjective"
-          @change="$emit('update:target-objective', $event.target.value)"
-        >
-          <option value="growth">Growth</option>
-          <option value="product">Product</option>
-        </select>
-      </label>
-
       <button class="primary-button" :disabled="uploadLoading" @click="$emit('upload')">
         {{ uploadLoading ? 'Creating session...' : 'Start session' }}
       </button>

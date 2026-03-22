@@ -12,9 +12,9 @@ defineProps({
     type: Array,
     required: true,
   },
-  targetObjective: {
+  mockAccession: {
     type: String,
-    required: true,
+    default: '',
   },
   summaryNarrative: {
     type: String,
@@ -32,8 +32,11 @@ defineProps({
 
     <div class="summary-grid">
       <article class="content-block">
-        <p class="section-kicker">Recommended signal</p>
-        <h4>{{ bestCandidate?.score ?? 'Pending' }}</h4>
+        <p class="section-kicker">Best mock candidate</p>
+        <h4>{{ bestCandidate?.cost ?? 'Pending' }}</h4>
+        <p class="section-copy">
+          {{ mockAccession ? `Profile: ${mockAccession}` : 'Profile pending' }}
+        </p>
         <div class="chip-list">
           <span
             v-for="field in parameterFields"
@@ -49,7 +52,7 @@ defineProps({
         <p class="section-kicker">Manual result</p>
         <h4>{{ evaluation?.objective_value ?? 'Pending' }}</h4>
         <p class="section-copy">
-          Objective: {{ evaluation?.target_objective || targetObjective }}
+          Live simulation output from the current custom condition.
         </p>
       </article>
     </div>
