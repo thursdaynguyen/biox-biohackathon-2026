@@ -16,7 +16,7 @@ const parameterFields = [
     key: 'EX_cellb_e',
     label: 'Cellobiose',
     hint: 'Complex carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -24,7 +24,7 @@ const parameterFields = [
     key: 'EX_glc__D_e',
     label: 'Glucose',
     hint: 'Primary carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -32,7 +32,7 @@ const parameterFields = [
     key: 'EX_glyc_e',
     label: 'Glycerol',
     hint: 'Alternative carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -40,7 +40,7 @@ const parameterFields = [
     key: 'EX_nh4_e',
     label: 'Ammonium',
     hint: 'Nitrogen supply',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -48,7 +48,7 @@ const parameterFields = [
     key: 'EX_o2_e',
     label: 'Oxygen',
     hint: 'Aeration window',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -56,7 +56,7 @@ const parameterFields = [
     key: 'EX_pi_e',
     label: 'Phosphate',
     hint: 'Phosphorus balance',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -64,7 +64,7 @@ const parameterFields = [
     key: 'EX_so4_e',
     label: 'Sulfate',
     hint: 'Sulfur source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -72,7 +72,7 @@ const parameterFields = [
     key: 'EX_xyl__D_e',
     label: 'Xylose',
     hint: 'Alternative sugar source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -119,14 +119,14 @@ const loading = reactive({
 })
 
 const parameters = reactive({
-  EX_cellb_e: 0.1,
-  EX_glc__D_e: 0.1,
-  EX_glyc_e: 0.1,
-  EX_nh4_e: 0.1,
-  EX_o2_e: 2,
-  EX_pi_e: 0.1,
-  EX_so4_e: 2,
-  EX_xyl__D_e: 0.1,
+  EX_cellb_e: -0.1,
+  EX_glc__D_e: -0.1,
+  EX_glyc_e: -0.1,
+  EX_nh4_e: -0.1,
+  EX_o2_e: -2,
+  EX_pi_e: -0.1,
+  EX_so4_e: -2,
+  EX_xyl__D_e: -0.1,
 })
 
 const TOP_K = 10
@@ -267,14 +267,6 @@ function onFileChange(event) {
   uploadFileName.value = file.name
 }
 
-function toUiMagnitude(value) {
-  return Number(Math.abs(Number(value ?? 0)).toFixed(3))
-}
-
-function toModelBound(value) {
-  return -Math.abs(Number(value ?? 0))
-}
-
 function formatDecimal(value) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue.toFixed(3) : 'N/A'
@@ -286,9 +278,7 @@ function normalizeMockCandidate(record) {
     cost: Number(record.cost),
     status: record.status,
     time: record.time,
-    parameters: Object.fromEntries(
-      Object.entries(record.config).map(([key, value]) => [key, toUiMagnitude(value)]),
-    ),
+    parameters: { ...record.config },
     rawParameters: record.config,
     metadata: {
       config_id: record.config_id,
@@ -408,9 +398,7 @@ async function runEvaluation() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: sessionId.value,
-        parameters: Object.fromEntries(
-          Object.entries(parameters).map(([key, value]) => [key, toModelBound(value)]),
-        ),
+        parameters: { ...parameters },
       }),
     })
 

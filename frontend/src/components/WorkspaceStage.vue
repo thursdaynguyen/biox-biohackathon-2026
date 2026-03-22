@@ -66,19 +66,22 @@ defineEmits([
   'evaluate',
 ])
 
+const BAR_MIN = -15
+const BAR_MAX = 15
+const BAR_RANGE = BAR_MAX - BAR_MIN
+
 function candidateMagnitude(candidate, key) {
   return Number(candidate?.parameters?.[key] ?? 0)
 }
 
-function maxMagnitudeForField(key) {
-  const values = props.candidates.map((candidate) => candidateMagnitude(candidate, key))
-  const maxValue = Math.max(...values, candidateMagnitude(props.bestCandidate, key), 0)
-  return maxValue > 0 ? maxValue : 1
-}
+function fieldBarStyle(candidate, key) {
+  const value = candidateMagnitude(candidate, key)
+  const clampedValue = Math.min(BAR_MAX, Math.max(BAR_MIN, value))
+  const width = ((clampedValue - BAR_MIN) / BAR_RANGE) * 100
 
-function fieldBarWidth(candidate, key) {
-  const ratio = candidateMagnitude(candidate, key) / maxMagnitudeForField(key)
-  return `${Math.max(12, ratio * 100)}%`
+  return {
+    width: `${width}%`,
+  }
 }
 
 function candidateLabel(index) {
@@ -147,7 +150,7 @@ function candidateLabel(index) {
                 <div class="composition-track">
                   <div
                     class="composition-fill"
-                    :style="{ width: fieldBarWidth(selectedCandidate, field.key) }"
+                    :style="fieldBarStyle(selectedCandidate, field.key)"
                   ></div>
                 </div>
               </div>

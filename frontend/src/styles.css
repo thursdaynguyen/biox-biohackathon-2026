@@ -499,6 +499,7 @@ select {
 
 .composition-track,
 .comparison-track {
+  position: relative;
   height: 10px;
   border-radius: 999px;
   background: rgba(43, 43, 40, 0.08);
@@ -507,9 +508,14 @@ select {
 
 .composition-fill,
 .comparison-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, rgba(31, 77, 58, 0.82), rgba(180, 106, 60, 0.62));
+  transition: width 220ms ease;
 }
 
 .candidate-navigator {
