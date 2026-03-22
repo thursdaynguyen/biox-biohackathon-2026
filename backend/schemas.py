@@ -47,6 +47,7 @@ class EvaluateResponse(BaseModel):
     target_objective: str | None = None
     objective_value: float
     byproduct_burden: float | None = None
+    try_metrics: dict[str, float] = Field(default_factory=dict)
     fluxes: dict[str, float]
     diagnostics: dict[str, Any] = Field(default_factory=dict)
 

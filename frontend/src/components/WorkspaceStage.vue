@@ -243,6 +243,18 @@ function formatDiagnosticValue(value) {
               <span>byproduct_burden</span>
               <strong>{{ formatDiagnosticValue(evaluation.byproduct_burden) }}</strong>
             </div>
+            <div class="diagnostic-card">
+              <span>titer</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Titer) }}</strong>
+            </div>
+            <div class="diagnostic-card">
+              <span>rate</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Rate) }}</strong>
+            </div>
+            <div class="diagnostic-card">
+              <span>yield</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Yield) }}</strong>
+            </div>
           </div>
           <p v-else class="empty-copy">
             The simulation diagnostics area will populate after you run the model.
