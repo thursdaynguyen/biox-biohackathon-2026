@@ -27,6 +27,7 @@
   --danger: #b85042;
   --success: #3f7d4c;
   --shadow: 0 30px 80px rgba(44, 45, 41, 0.12);
+  --focus-ring: 0 0 0 4px rgba(31, 77, 58, 0.14);
 }
 
 * {
@@ -52,6 +53,19 @@ select {
 
 button {
   cursor: pointer;
+}
+
+input,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .app-shell {
@@ -291,11 +305,35 @@ button {
 select,
 input[type='number'] {
   width: 100%;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: rgba(255, 252, 246, 0.9);
+  border: 1px solid rgba(43, 43, 40, 0.14);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(247, 241, 231, 0.92));
   padding: 12px 14px;
   color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+select:hover,
+input[type='number']:hover {
+  border-color: rgba(31, 77, 58, 0.2);
+}
+
+select {
+  padding-right: 42px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--primary) 50%),
+    linear-gradient(135deg, var(--primary) 50%, transparent 50%),
+    linear-gradient(180deg, rgba(255, 252, 246, 0.96), rgba(247, 241, 231, 0.92));
+  background-position:
+    calc(100% - 20px) calc(50% - 3px),
+    calc(100% - 14px) calc(50% - 3px),
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
 }
 
 .mode-grid,
@@ -344,9 +382,10 @@ input[type='number'] {
   display: inline-flex;
   gap: 8px;
   padding: 6px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(43, 43, 40, 0.12);
   border-radius: 999px;
-  background: rgba(255, 252, 246, 0.82);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(245, 239, 229, 0.86));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .toggle-chip {
@@ -356,10 +395,11 @@ input[type='number'] {
   color: var(--text-muted);
   padding: 10px 14px;
   font-weight: 700;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
 }
 
 .toggle-chip.active {
-  background: rgba(31, 77, 58, 0.1);
+  background: linear-gradient(180deg, rgba(31, 77, 58, 0.12), rgba(31, 77, 58, 0.18));
   color: var(--primary);
 }
 
@@ -420,11 +460,12 @@ input[type='number'] {
 }
 
 .candidate-item {
-  border: 1px solid var(--line);
+  border: 1px solid rgba(43, 43, 40, 0.12);
   border-radius: 18px;
-  background: rgba(255, 252, 246, 0.88);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 241, 231, 0.86));
   padding: 14px;
   text-align: left;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
 .candidate-copy {
@@ -455,9 +496,9 @@ input[type='number'] {
 .slider-field {
   display: grid;
   gap: 10px;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(43, 43, 40, 0.12);
   border-radius: 18px;
-  background: rgba(255, 252, 246, 0.88);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 241, 231, 0.86));
   padding: 14px;
 }
 
@@ -474,7 +515,45 @@ input[type='number'] {
 
 input[type='range'] {
   width: 100%;
-  accent-color: var(--primary);
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(31, 77, 58, 0.18), rgba(180, 106, 60, 0.16));
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(31, 77, 58, 0.18), rgba(180, 106, 60, 0.16));
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 2px solid rgba(255, 252, 246, 0.95);
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 4px 10px rgba(31, 77, 58, 0.22);
+}
+
+input[type='range']::-moz-range-track {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(31, 77, 58, 0.18), rgba(180, 106, 60, 0.16));
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 252, 246, 0.95);
+  border-radius: 999px;
+  background: var(--primary);
+  box-shadow: 0 4px 10px rgba(31, 77, 58, 0.22);
 }
 
 .diagnostic-grid {
@@ -548,31 +627,63 @@ input[type='range'] {
   border-radius: 999px;
   padding: 12px 18px;
   font-weight: 800;
-  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
 
 .primary-button {
   border: 0;
-  background: var(--primary);
+  background: linear-gradient(135deg, #1f4d3a, #2f654f);
   color: #f8f5ee;
+  box-shadow: 0 10px 22px rgba(31, 77, 58, 0.2);
 }
 
 .secondary-button {
-  border: 1px solid var(--line);
-  background: rgba(255, 252, 246, 0.9);
+  border: 1px solid rgba(43, 43, 40, 0.12);
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.94), rgba(247, 241, 231, 0.9));
   color: var(--text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .ghost-button {
-  border: 1px solid var(--line);
-  background: transparent;
+  border: 1px solid rgba(43, 43, 40, 0.12);
+  background: rgba(255, 252, 246, 0.56);
   color: var(--text);
+}
+
+.secondary-button:hover:not(:disabled),
+.ghost-button:hover:not(:disabled) {
+  border-color: rgba(31, 77, 58, 0.22);
 }
 
 button:disabled {
   cursor: not-allowed;
   transform: none !important;
   opacity: 0.6;
+}
+
+.stage-layout::-webkit-scrollbar,
+.workspace-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.stage-layout::-webkit-scrollbar-track,
+.workspace-panel::-webkit-scrollbar-track {
+  background: rgba(43, 43, 40, 0.05);
+  border-radius: 999px;
+}
+
+.stage-layout::-webkit-scrollbar-thumb,
+.workspace-panel::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(31, 77, 58, 0.35), rgba(180, 106, 60, 0.3));
+  background-clip: padding-box;
+}
+
+.stage-layout,
+.workspace-panel {
+  scrollbar-color: rgba(31, 77, 58, 0.4) rgba(43, 43, 40, 0.05);
+  scrollbar-width: thin;
 }
 
 .card-slide-forward-enter-active,
