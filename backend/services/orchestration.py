@@ -21,7 +21,7 @@ async def create_upload_session(file: UploadFile) -> UploadResponse:
 
 
 def evaluate_parameters(payload: EvaluateRequest) -> EvaluateResponse:
-    solution = run_simulation_model(payload)
+    solution, byproduct_burden = run_simulation_model(payload)
     return EvaluateResponse(
         session_id=payload.session_id,
         target_objective=payload.target_objective,
@@ -32,6 +32,7 @@ def evaluate_parameters(payload: EvaluateRequest) -> EvaluateResponse:
             "parameter_count": len(payload.parameters),
             "objective_mode": payload.target_objective or "default",
         },
+        byproduct_burden=byproduct_burden,
     )
 
 

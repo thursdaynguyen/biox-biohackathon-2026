@@ -63,3 +63,17 @@ def apply_media_and_gapfill(current_model_path, media, o2_bounds=None):
     )
 
     return model
+
+def calculate_byproduct_burden(current_model_path, solution):
+    """Sums the total flux of all secreted carbon-containing byproducts."""
+    model = load_and_prep_model(str(current_model_path))
+
+    safe_exhaust = ['EX_h2o_e', 'EX_co2_e', 'EX_h_e', 'EX_o2_e']
+    total_byproduct_flux = 0.0
+
+    for rxn in model.exchanges:
+        flux = solution.fluxes.get(rxn.id, 0.0)
+        if flux > 1e-4 and rxn.id not in safe_exhaust:
+            total_byproduct_flux += flux
+            
+    return total_byproduct_flux
