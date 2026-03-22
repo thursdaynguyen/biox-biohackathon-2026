@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import cobra
-from fastapi import HTTPException
 
+from backend.errors import AppError
 from backend.schemas import EvaluateRequest
 from backend.services.storage import model_path
 from src.utils.apply_media import apply_media_and_gapfill, load_and_prep_model
@@ -19,10 +19,39 @@ def extract_fluxes(solution: cobra.Solution) -> dict[str, float]:
 
 
 def run_simulation_model(payload: EvaluateRequest) -> cobra.Solution:
+    if not payload.parameters:
+        raise AppError(
+            code="INVALID_INPUT",
+            message="At least one parameter must be provided for evaluation.",
+            status_code=400,
+        )
+
     current_model_path = model_path(payload.session_id)
     if not current_model_path.exists():
-        raise HTTPException(status_code=404, detail="Session model was not found.")
+        raise AppError(
+            code="MODEL_NOT_FOUND",
+            message="Session model was not found.",
+            status_code=404,
+        )
 
-    model = load_and_prep_model(str(current_model_path))
-    model = apply_media_and_gapfill(model, payload.parameters, payload.o2_bounds)
-    return model.optimize()
+    try:
+        model = load_and_prep_model(str(current_model_path))
+        model = apply_media_and_gapfill(model, payload.parameters, payload.o2_bounds)
+        solution = model.optimize()
+    except AppError:
+        raise
+    except Exception as exc:
+        raise AppError(
+            code="CORE_EVALUATION_FAILED",
+            message=f"Core evaluation failed: {exc}",
+            status_code=500,
+        ) from exc
+
+    if solution.status != "optimal":
+        raise AppError(
+            code="CORE_EVALUATION_FAILED",
+            message=f"Core evaluation returned non-optimal status: {solution.status}",
+            status_code=500,
+        )
+
+    return solution

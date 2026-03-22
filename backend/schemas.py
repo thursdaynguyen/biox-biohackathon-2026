@@ -9,6 +9,15 @@ class HealthResponse(BaseModel):
     status: str = "ok"
 
 
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+
+
+class ErrorResponse(BaseModel):
+    error: ErrorBody
+
+
 class UploadResponse(BaseModel):
     session_id: str
     model_path: str

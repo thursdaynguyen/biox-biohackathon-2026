@@ -1,6 +1,7 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.errors import register_error_handlers
 from backend.schemas import (
     CandidatesResponse,
     EvaluateRequest,
@@ -25,6 +26,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+register_error_handlers(app)
 
 
 @app.get("/health", response_model=HealthResponse)

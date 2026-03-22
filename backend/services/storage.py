@@ -6,8 +6,9 @@ import sys
 from pathlib import Path
 
 import cobra
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 
+from backend.errors import AppError
 from backend.schemas import UploadResponse
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -28,7 +29,11 @@ def model_path(session_id: str) -> Path:
 def run_carveme(input_path: Path, output_path: Path) -> None:
     script_path = BASE_DIR / "src" / "utils" / "run_carveme.py"
     if not script_path.exists():
-        raise HTTPException(status_code=500, detail="CarveMe runner script is missing.")
+        raise AppError(
+            code="MODEL_BUILD_FAILED",
+            message="CarveMe runner script is missing.",
+            status_code=500,
+        )
 
     process = subprocess.run(
         [
@@ -46,9 +51,10 @@ def run_carveme(input_path: Path, output_path: Path) -> None:
 
     if process.returncode != 0:
         error_message = (process.stderr or process.stdout or "").strip()
-        raise HTTPException(
+        raise AppError(
+            code="MODEL_BUILD_FAILED",
+            message=f"CarveMe failed to build a GEM. {error_message}",
             status_code=500,
-            detail=f"CarveMe failed to build a GEM. {error_message}",
         )
 
 
@@ -56,23 +62,38 @@ def validate_model(path: Path) -> None:
     try:
         cobra.io.read_sbml_model(path)
     except Exception as exc:
-        raise HTTPException(
+        raise AppError(
+            code="INVALID_INPUT",
+            message=f"Uploaded sequence did not produce a valid SBML model: {exc}",
             status_code=400,
-            detail=f"Uploaded sequence did not produce a valid SBML model: {exc}",
         ) from exc
 
 
 async def create_session_from_upload(file: UploadFile) -> UploadResponse:
+    if not file.filename:
+        raise AppError(
+            code="INVALID_INPUT",
+            message="Uploaded file must include a filename.",
+            status_code=400,
+        )
+
+    file_bytes = await file.read()
+    if not file_bytes:
+        raise AppError(
+            code="INVALID_INPUT",
+            message="Uploaded file is empty.",
+            status_code=400,
+        )
+
     session_id = os.urandom(6).hex()
     current_session_dir = session_dir(session_id)
     input_path = current_session_dir / file.filename
     output_path = model_path(session_id)
 
     with input_path.open("wb") as output_file:
-        output_file.write(await file.read())
+        output_file.write(file_bytes)
 
     run_carveme(input_path=input_path, output_path=output_path)
     validate_model(output_path)
 
     return UploadResponse(session_id=session_id, model_path=str(output_path))
-
