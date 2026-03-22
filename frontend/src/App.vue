@@ -477,7 +477,7 @@ onMounted(() => {
 
     <header class="brand-strip">
       <div>
-        <p class="eyebrow">BioX Hackathon MVP</p>
+        <p class="eyebrow">BioX - BioHackathon Edinburgh 2026</p>
         <h1>MediaOpt</h1>
       </div>
     </header>
