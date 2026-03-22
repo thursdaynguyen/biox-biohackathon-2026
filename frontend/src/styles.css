@@ -583,6 +583,10 @@ select {
   gap: 12px;
 }
 
+.slider-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .candidate-item {
   border: 1px solid rgba(43, 43, 40, 0.12);
   border-radius: 18px;
@@ -619,10 +623,10 @@ select {
 
 .slider-field {
   display: grid;
-  gap: 10px;
-  border: 1px solid rgba(43, 43, 40, 0.12);
+  gap: 12px;
+  border: 1px solid rgba(43, 43, 40, 0.08);
   border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255, 252, 246, 0.9), rgba(247, 241, 231, 0.86));
+  background: rgba(255, 252, 246, 0.74);
   padding: 14px;
 }
 
@@ -630,11 +634,14 @@ select {
   display: flex;
   justify-content: space-between;
   gap: 10px;
+  align-items: baseline;
 }
 
 .slider-head span,
 .slider-head small {
   color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 input[type='range'] {
@@ -859,7 +866,8 @@ button:disabled {
   .mode-grid,
   .summary-grid,
   .diagnostic-grid,
-  .composition-grid-inner {
+  .composition-grid-inner,
+  .slider-grid {
     grid-template-columns: 1fr;
   }
 

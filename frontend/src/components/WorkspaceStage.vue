@@ -173,7 +173,7 @@ function candidateLabel(index) {
       <div class="workspace-page-head">
         <div>
           <p class="section-kicker">Parameter simulation</p>
-          <h3>Simulate a custom parameter set</h3>
+          <h3>Simulation setup</h3>
         </div>
         <button class="ghost-button subtle-switch" @click="$emit('switch-mode', 'recommended')">
           Switch to optimization suggestions
@@ -182,7 +182,16 @@ function candidateLabel(index) {
 
       <div class="workspace-grid">
         <article class="content-block wide-block">
-          <p class="section-kicker">Parameter set</p>
+          <div class="best-formulation-head">
+            <div>
+              <p class="section-kicker">Parameter set</p>
+              <h4 class="section-heading">Simulation setup</h4>
+            </div>
+            <span class="metric-badge">
+              Result {{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}
+            </span>
+          </div>
+
           <div class="slider-grid">
             <label
               v-for="field in parameterFields"
@@ -208,7 +217,7 @@ function candidateLabel(index) {
             </label>
           </div>
 
-          <div class="manual-actions">
+          <div class="workspace-inline-actions">
             <button
               class="primary-button"
               :disabled="loadingEvaluation || !sessionReady"
@@ -219,13 +228,8 @@ function candidateLabel(index) {
           </div>
         </article>
 
-        <article class="content-block compact-block">
-          <p class="section-kicker">Simulation result</p>
-          <h3>{{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}</h3>
-        </article>
-
         <article class="content-block wide-block">
-          <p class="section-kicker">Diagnostics and flux snapshot</p>
+          <p class="section-kicker">Simulation details</p>
           <div v-if="evaluation" class="diagnostic-grid">
             <div
               v-for="(value, key) in evaluation.fluxes"
