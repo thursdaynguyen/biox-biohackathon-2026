@@ -566,7 +566,7 @@ onMounted(() => {
 
           <template #footer-left>
             <button
-              v-if="currentStep > 1"
+              v-if="currentStep > 0"
               class="ghost-button"
               @click="goBack"
             >
