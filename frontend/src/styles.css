@@ -428,6 +428,102 @@ select {
   grid-column: 1 / -1;
 }
 
+.section-heading {
+  margin: 8px 0 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.04em;
+}
+
+.best-formulation-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.metric-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(43, 43, 40, 0.12);
+  background: rgba(255, 252, 246, 0.92);
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.composition-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.composition-card,
+.comparison-cell {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(43, 43, 40, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 252, 246, 0.74);
+}
+
+.composition-card-head,
+.comparison-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.composition-card-head span,
+.comparison-card-head span,
+.comparison-cell span {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.composition-track,
+.comparison-track {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(43, 43, 40, 0.08);
+  overflow: hidden;
+}
+
+.composition-fill,
+.comparison-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(31, 77, 58, 0.82), rgba(180, 106, 60, 0.62));
+}
+
+.comparison-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.comparison-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(43, 43, 40, 0.12);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 252, 246, 0.92), rgba(247, 241, 231, 0.88));
+  padding: 16px;
+  text-align: left;
+  transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+}
+
+.comparison-matrix {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
 .emphasis-block h3,
 .compact-block h3 {
   font-size: clamp(1.8rem, 3vw, 2.4rem);
@@ -717,7 +813,9 @@ button:disabled {
   .workspace-grid,
   .mode-grid,
   .summary-grid,
-  .diagnostic-grid {
+  .diagnostic-grid,
+  .composition-grid,
+  .comparison-matrix {
     grid-template-columns: 1fr;
   }
 

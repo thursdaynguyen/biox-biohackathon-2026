@@ -1,5 +1,5 @@
 <script setup>
-defineProps({
+const props = defineProps({
   mode: {
     type: String,
     required: true,
@@ -57,6 +57,21 @@ defineEmits([
   'update-parameter',
   'evaluate',
 ])
+
+function candidateMagnitude(candidate, key) {
+  return Number(candidate?.parameters?.[key] ?? 0)
+}
+
+function maxMagnitudeForField(key) {
+  const values = props.candidates.map((candidate) => candidateMagnitude(candidate, key))
+  const maxValue = Math.max(...values, candidateMagnitude(props.bestCandidate, key), 0)
+  return maxValue > 0 ? maxValue : 1
+}
+
+function fieldBarWidth(candidate, key) {
+  const ratio = candidateMagnitude(candidate, key) / maxMagnitudeForField(key)
+  return `${Math.max(12, ratio * 100)}%`
+}
 </script>
 
 <template>
@@ -73,9 +88,38 @@ defineEmits([
       </div>
 
       <div class="workspace-grid">
-        <article class="content-block emphasis-block">
-          <p class="section-kicker">Suggested best condition</p>
-          <h3>{{ bestCandidate ? formatDecimal(bestCandidate.cost) : 'No cost yet' }}</h3>
+        <article class="content-block wide-block">
+          <div class="best-formulation-head">
+            <div>
+              <p class="section-kicker">Best suggested formulation</p>
+              <h4 class="section-heading">Composition overview</h4>
+            </div>
+            <span class="metric-badge">
+              Cost {{ bestCandidate ? formatDecimal(bestCandidate.cost) : 'N/A' }}
+            </span>
+          </div>
+
+          <div v-if="bestCandidate" class="composition-grid">
+            <div
+              v-for="field in parameterFields"
+              :key="field.key"
+              class="composition-card"
+            >
+              <div class="composition-card-head">
+                <strong>{{ field.label }}</strong>
+                <span>{{ formatDecimal(bestCandidate.parameters?.[field.key]) }}</span>
+              </div>
+              <div class="composition-track">
+                <div
+                  class="composition-fill"
+                  :style="{ width: fieldBarWidth(bestCandidate, field.key) }"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <p v-else class="empty-copy">
+            No optimization suggestions are available for the selected profile.
+          </p>
         </article>
 
         <article class="content-block compact-block">
@@ -93,23 +137,34 @@ defineEmits([
         </article>
 
         <article class="content-block wide-block">
-          <p class="section-kicker">Top suggested conditions</p>
-          <div v-if="candidates.length" class="candidate-list">
+          <p class="section-kicker">Top candidate comparison</p>
+          <div v-if="candidates.length" class="comparison-stack">
             <button
               v-for="(candidate, index) in candidates"
               :key="`${index}-${candidate.cost}`"
-              class="candidate-item"
+              class="comparison-card"
               @click="$emit('apply-candidate', candidate)"
             >
-              <div class="candidate-copy">
+              <div class="comparison-card-head">
                 <strong>Suggestion {{ index + 1 }}</strong>
                 <span>Cost {{ formatDecimal(candidate.cost) }}</span>
               </div>
-              <div class="candidate-bar">
+
+              <div class="comparison-matrix">
                 <div
-                  class="candidate-fill"
-                  :style="{ width: candidate.barWidth || '35%' }"
-                ></div>
+                  v-for="field in parameterFields"
+                  :key="`${candidate.id}-${field.key}`"
+                  class="comparison-cell"
+                >
+                  <span>{{ field.label }}</span>
+                  <div class="comparison-track">
+                    <div
+                      class="comparison-fill"
+                      :style="{ width: fieldBarWidth(candidate, field.key) }"
+                    ></div>
+                  </div>
+                  <strong>{{ formatDecimal(candidate.parameters?.[field.key]) }}</strong>
+                </div>
               </div>
             </button>
           </div>
