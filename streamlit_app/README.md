@@ -1,4 +1,4 @@
-MVP Media/Conditions Optimizer
+MediaOpt from BioX
 
 This small MVP provides a Streamlit dashboard that loads SBML model files (like the CarveMe outputs in this folder), exposes extracellular species as sliders (media components), and runs a simple optimizer to search for promising media/condition settings.
 
@@ -22,7 +22,7 @@ What it does
 
 - Parses SBML/XML files in this folder or an uploaded SBML via drag & drop, and heuristically identifies extracellular species.
 - Shows sliders for selected species with per-slider bounds you can tune.
-- Objective options: mock growth, mock product, TRY (titer/rate/yield mock), and a scalarized multi-objective (growth + yield – byproduct penalty). Live score shown.
+- Objective options: Growth Rate, mock product, TRY (titer/rate/yield mock), and a scalarized multi-objective (growth + yield – byproduct penalty). Live score shown.
 - Runs a random-search optimizer to suggest settings that maximize the selected objective.
 
 Upload support
@@ -53,7 +53,7 @@ Exchange mapping UI
 Notes on byproduct minimization and TRY
 
 - The multi-objective adds a penalty for byproduct-like species (acetate, lactate, citrate, ethanol, etc.) and rewards yield (growth per carbon proxy).
-- TRY is mock: titer = selected product slider value; rate = mock growth; yield = titer / carbon substrates proxy.
+- TRY is mock: titer = selected product slider value; rate = Growth Rate; yield = titer / carbon substrates proxy.
 
 Next steps / improvements
 
