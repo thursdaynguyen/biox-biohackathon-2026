@@ -2,6 +2,14 @@
 
 Pragmatic, modular stack to take a fungal genome, auto-generate a compartmentalized GEM with EggNOG-mapper + CarveFungi, curate it for growth, run pFBA with oxygen unconstrained, and surface a minimal media lever set using shadow prices and C/N ratios.
 
+## Input Scope
+
+The intended pipeline concept can serve both genome-level and protein-level inputs.
+
+For the current MVP demo, the practical working input is protein FASTA, used with a
+CarveMe-based build step. This keeps the demo reliable while preserving the broader
+genome-to-GEM framing of the project.
+
 ## Why this repo
 - Filamentous fungi need a eukaryotic template (chitin/ergosterol biomass) and compartment-aware SBML.
 - Overflow metabolism is common; pFBA plus C/N flagging keeps the focus on biomass vs. byproducts.
