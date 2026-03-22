@@ -14,24 +14,41 @@ class UploadResponse(BaseModel):
     model_path: str
 
 
-class RecommendationItem(BaseModel):
-    id: str
-    label: str
-    direction: str
-    reason: str
-    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+class SolutionPoint(BaseModel):
+    parameters: dict[str, float]
+    score: float | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
 
-class SimulateRequest(BaseModel):
+class EvaluateRequest(BaseModel):
     session_id: str
-    media: dict[str, float]
+    parameters: dict[str, float]
     target_objective: str | None = None
     o2_bounds: list[float] | None = None
 
 
-class SimulateResponse(BaseModel):
+class OptimizeRequest(BaseModel):
     session_id: str
+    top_k: int = Field(default=5, ge=1, le=20)
+    target_objective: str | None = None
+
+
+class EvaluateResponse(BaseModel):
+    session_id: str
+    target_objective: str | None = None
     objective_value: float
     fluxes: dict[str, float]
-    recommendations: list[RecommendationItem]
     diagnostics: dict[str, Any] = Field(default_factory=dict)
+
+
+class OptimumResponse(BaseModel):
+    session_id: str
+    target_objective: str | None = None
+    optimum: SolutionPoint
+
+
+class CandidatesResponse(BaseModel):
+    session_id: str
+    target_objective: str | None = None
+    top_k: int
+    candidates: list[SolutionPoint]
