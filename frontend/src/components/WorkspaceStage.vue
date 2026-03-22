@@ -61,29 +61,35 @@ const props = defineProps({
 defineEmits([
   'switch-mode',
   'select-candidate',
-  'update:top-k',
   'apply-candidate',
   'update-parameter',
   'evaluate',
 ])
 
+const BAR_MIN = -15
+const BAR_MAX = 15
+const BAR_RANGE = BAR_MAX - BAR_MIN
+
 function candidateMagnitude(candidate, key) {
   return Number(candidate?.parameters?.[key] ?? 0)
 }
 
-function maxMagnitudeForField(key) {
-  const values = props.candidates.map((candidate) => candidateMagnitude(candidate, key))
-  const maxValue = Math.max(...values, candidateMagnitude(props.bestCandidate, key), 0)
-  return maxValue > 0 ? maxValue : 1
-}
+function fieldBarStyle(candidate, key) {
+  const value = candidateMagnitude(candidate, key)
+  const clampedValue = Math.min(BAR_MAX, Math.max(BAR_MIN, value))
+  const width = ((clampedValue - BAR_MIN) / BAR_RANGE) * 100
 
-function fieldBarWidth(candidate, key) {
-  const ratio = candidateMagnitude(candidate, key) / maxMagnitudeForField(key)
-  return `${Math.max(12, ratio * 100)}%`
+  return {
+    width: `${width}%`,
+  }
 }
 
 function candidateLabel(index) {
   return `Suggestion ${index + 1}`
+}
+
+function formatDiagnosticValue(value) {
+  return typeof value === 'number' ? props.formatDecimal(value) : String(value ?? 'N/A')
 }
 </script>
 
@@ -107,16 +113,38 @@ function candidateLabel(index) {
               <p class="section-kicker">Candidate formulation</p>
               <h4 class="section-heading">Composition overview</h4>
             </div>
-            <span class="metric-badge">
-              Cost {{ selectedCandidate ? formatDecimal(selectedCandidate.cost) : 'N/A' }}
-            </span>
+            <div class="best-formulation-controls">
+              <div v-if="candidates.length" class="candidate-navigator">
+                <button
+                  class="nav-arrow"
+                  :disabled="selectedCandidateIndex <= 0"
+                  @click="$emit('select-candidate', selectedCandidateIndex - 1)"
+                >
+                  Previous
+                </button>
+                <div class="candidate-readout">
+                  <strong>{{ candidateLabel(selectedCandidateIndex) }}</strong>
+                  <span>{{ selectedCandidateIndex + 1 }} / {{ candidates.length }}</span>
+                </div>
+                <button
+                  class="nav-arrow"
+                  :disabled="selectedCandidateIndex >= candidates.length - 1"
+                  @click="$emit('select-candidate', selectedCandidateIndex + 1)"
+                >
+                  Next
+                </button>
+              </div>
+              <span class="metric-badge">
+                Cost {{ selectedCandidate ? formatDecimal(selectedCandidate.cost) : 'N/A' }}
+              </span>
+            </div>
           </div>
 
           <div v-if="selectedCandidate" class="composition-grid">
-            <TransitionGroup name="composition-swap" tag="div" class="composition-grid-inner">
+            <div class="composition-grid-inner">
               <div
                 v-for="field in parameterFields"
-                :key="`${selectedCandidate.id}-${field.key}`"
+                :key="field.key"
                 class="composition-card"
               >
                 <div class="composition-card-head">
@@ -126,54 +154,22 @@ function candidateLabel(index) {
                 <div class="composition-track">
                   <div
                     class="composition-fill"
-                    :style="{ width: fieldBarWidth(selectedCandidate, field.key) }"
+                    :style="fieldBarStyle(selectedCandidate, field.key)"
                   ></div>
                 </div>
               </div>
-            </TransitionGroup>
+            </div>
           </div>
           <p v-else class="empty-copy">
             No optimization suggestions are available for the selected profile.
           </p>
         </article>
 
-        <article class="content-block compact-block">
-          <div class="inline-field">
-            <label for="top-k-input">Show top candidates</label>
-            <input
-              id="top-k-input"
-              :value="topK"
-              type="number"
-              min="1"
-              max="20"
-              @input="$emit('update:top-k', Number($event.target.value))"
-            />
-          </div>
-        </article>
-
-        <article class="content-block wide-block">
-          <p class="section-kicker">Candidate selector</p>
-          <div v-if="candidates.length" class="candidate-selector">
-            <button
-              v-for="(candidate, index) in candidates"
-              :key="`${index}-${candidate.cost}`"
-              class="candidate-tab"
-              :class="{ active: selectedCandidateIndex === index }"
-              @click="$emit('select-candidate', index)"
-            >
-              <strong>{{ candidateLabel(index) }}</strong>
-              <span>{{ formatDecimal(candidate.cost) }}</span>
-            </button>
-          </div>
-          <div v-if="selectedCandidate" class="selector-actions">
-            <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
-              Send this formulation to simulation
-            </button>
-          </div>
-          <p v-else class="empty-copy">
-            No optimization suggestions are available for the selected profile.
-          </p>
-        </article>
+        <div v-if="selectedCandidate" class="workspace-inline-actions">
+          <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
+            Send this formulation to simulation
+          </button>
+        </div>
       </div>
     </div>
 
@@ -181,7 +177,7 @@ function candidateLabel(index) {
       <div class="workspace-page-head">
         <div>
           <p class="section-kicker">Parameter simulation</p>
-          <h3>Simulate a custom parameter set</h3>
+          <h3>Simulation setup</h3>
         </div>
         <button class="ghost-button subtle-switch" @click="$emit('switch-mode', 'recommended')">
           Switch to optimization suggestions
@@ -190,7 +186,16 @@ function candidateLabel(index) {
 
       <div class="workspace-grid">
         <article class="content-block wide-block">
-          <p class="section-kicker">Parameter set</p>
+          <div class="best-formulation-head">
+            <div>
+              <p class="section-kicker">Parameter set</p>
+              <h4 class="section-heading">Simulation setup</h4>
+            </div>
+            <span class="metric-badge">
+              Objective {{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}
+            </span>
+          </div>
+
           <div class="slider-grid">
             <label
               v-for="field in parameterFields"
@@ -216,7 +221,7 @@ function candidateLabel(index) {
             </label>
           </div>
 
-          <div class="manual-actions">
+          <div class="workspace-inline-actions">
             <button
               class="primary-button"
               :disabled="loadingEvaluation || !sessionReady"
@@ -227,29 +232,28 @@ function candidateLabel(index) {
           </div>
         </article>
 
-        <article class="content-block compact-block">
-          <p class="section-kicker">Simulation result</p>
-          <h3>{{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}</h3>
-        </article>
-
         <article class="content-block wide-block">
-          <p class="section-kicker">Diagnostics and flux snapshot</p>
+          <p class="section-kicker">Key outputs</p>
           <div v-if="evaluation" class="diagnostic-grid">
-            <div
-              v-for="(value, key) in evaluation.fluxes"
-              :key="key"
-              class="diagnostic-card"
-            >
-              <span>{{ key }}</span>
-              <strong>{{ formatDecimal(value) }}</strong>
+            <div class="diagnostic-card">
+              <span>objective_value</span>
+              <strong>{{ formatDecimal(evaluation.objective_value) }}</strong>
             </div>
-            <div
-              v-for="[key, value] in diagnostics"
-              :key="key"
-              class="diagnostic-card subtle"
-            >
-              <span>{{ key }}</span>
-              <strong>{{ formatDecimal(value) }}</strong>
+            <div class="diagnostic-card">
+              <span>byproduct_burden</span>
+              <strong>{{ formatDiagnosticValue(evaluation.byproduct_burden) }}</strong>
+            </div>
+            <div class="diagnostic-card">
+              <span>titer</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Titer) }}</strong>
+            </div>
+            <div class="diagnostic-card">
+              <span>rate</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Rate) }}</strong>
+            </div>
+            <div class="diagnostic-card">
+              <span>yield</span>
+              <strong>{{ formatDecimal(evaluation.try_metrics?.Yield) }}</strong>
             </div>
           </div>
           <p v-else class="empty-copy">

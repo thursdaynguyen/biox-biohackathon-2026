@@ -3,7 +3,6 @@ import { computed, onMounted, reactive, ref } from 'vue'
 
 import AppCardShell from './components/AppCardShell.vue'
 import ModeStage from './components/ModeStage.vue'
-import SummaryStage from './components/SummaryStage.vue'
 import UploadStage from './components/UploadStage.vue'
 import WorkspaceStage from './components/WorkspaceStage.vue'
 
@@ -16,7 +15,7 @@ const parameterFields = [
     key: 'EX_cellb_e',
     label: 'Cellobiose',
     hint: 'Complex carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -24,7 +23,7 @@ const parameterFields = [
     key: 'EX_glc__D_e',
     label: 'Glucose',
     hint: 'Primary carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -32,7 +31,7 @@ const parameterFields = [
     key: 'EX_glyc_e',
     label: 'Glycerol',
     hint: 'Alternative carbon source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -40,7 +39,7 @@ const parameterFields = [
     key: 'EX_nh4_e',
     label: 'Ammonium',
     hint: 'Nitrogen supply',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -48,7 +47,7 @@ const parameterFields = [
     key: 'EX_o2_e',
     label: 'Oxygen',
     hint: 'Aeration window',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -56,7 +55,7 @@ const parameterFields = [
     key: 'EX_pi_e',
     label: 'Phosphate',
     hint: 'Phosphorus balance',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -64,7 +63,7 @@ const parameterFields = [
     key: 'EX_so4_e',
     label: 'Sulfate',
     hint: 'Sulfur source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -72,7 +71,7 @@ const parameterFields = [
     key: 'EX_xyl__D_e',
     label: 'Xylose',
     hint: 'Alternative sugar source',
-    min: 0,
+    min: -15,
     max: 15,
     step: 0.1,
   },
@@ -80,24 +79,16 @@ const parameterFields = [
 
 const stepTitles = [
   {
-    eyebrow: 'Step 1 of 4',
     title: 'Create a model session',
     description: 'Start the demo with a protein FASTA file and attach it to the closest precomputed optimization profile.',
   },
   {
-    eyebrow: 'Step 2 of 4',
     title: 'Choose an exploration path',
     description: 'Pick the workflow you want to enter first. You can still switch inside the workspace.',
   },
   {
-    eyebrow: 'Step 3 of 4',
     title: 'Explore candidate conditions',
     description: 'Move between recommended and manual exploration without leaving the same workspace.',
-  },
-  {
-    eyebrow: 'Step 4 of 4',
-    title: 'Review the strongest signal',
-    description: 'Summarize what the model currently suggests and what to try next.',
   },
 ]
 
@@ -119,17 +110,17 @@ const loading = reactive({
 })
 
 const parameters = reactive({
-  EX_cellb_e: 0.1,
-  EX_glc__D_e: 0.1,
-  EX_glyc_e: 0.1,
-  EX_nh4_e: 0.1,
-  EX_o2_e: 2,
-  EX_pi_e: 0.1,
-  EX_so4_e: 2,
-  EX_xyl__D_e: 0.1,
+  EX_cellb_e: -0.1,
+  EX_glc__D_e: -0.1,
+  EX_glyc_e: -0.1,
+  EX_nh4_e: -0.1,
+  EX_o2_e: -2,
+  EX_pi_e: -0.1,
+  EX_so4_e: -2,
+  EX_xyl__D_e: -0.1,
 })
 
-const topK = ref(5)
+const TOP_K = 10
 const selectedCandidateIndex = ref(0)
 const evaluation = ref(null)
 
@@ -141,14 +132,12 @@ const currentCopy = computed(() => {
 
   if (activeMode.value === 'recommended') {
     return {
-      eyebrow: 'Step 3 of 4',
       title: 'Review optimization suggestions',
       description: 'Inspect the precomputed best condition and compare the strongest suggested media settings for the selected demo profile.',
     }
   }
 
   return {
-    eyebrow: 'Step 3 of 4',
     title: 'Simulate a parameter set',
     description: 'Adjust a small set of media parameters and run a live model simulation with the current GEM session.',
   }
@@ -174,7 +163,7 @@ const displayCandidates = computed(() => {
 
   const candidateList = [...mockRecordsForSelection.value]
     .sort((left, right) => left.cost - right.cost)
-    .slice(0, topK.value)
+    .slice(0, TOP_K)
     .map(normalizeMockCandidate)
 
   const costs = candidateList
@@ -209,22 +198,6 @@ const diagnosticsEntries = computed(() => {
   }
 
   return Object.entries(evaluation.value.diagnostics)
-})
-
-const summaryNarrative = computed(() => {
-  if (evaluation.value && bestAvailableCandidate.value) {
-    return 'The mock optimization profile gives you the lowest-cost candidate, while the manual run shows how your custom condition behaves in the live model.'
-  }
-
-  if (bestAvailableCandidate.value) {
-    return 'The strongest available recommendation currently comes from the precomputed optimization profile.'
-  }
-
-  if (evaluation.value) {
-    return 'A manual evaluation is available, but no recommended candidate has been fetched yet.'
-  }
-
-  return 'Run either recommended or manual exploration to generate an actionable summary.'
 })
 
 function resetError() {
@@ -267,14 +240,6 @@ function onFileChange(event) {
   uploadFileName.value = file.name
 }
 
-function toUiMagnitude(value) {
-  return Number(Math.abs(Number(value ?? 0)).toFixed(3))
-}
-
-function toModelBound(value) {
-  return -Math.abs(Number(value ?? 0))
-}
-
 function formatDecimal(value) {
   const numericValue = Number(value)
   return Number.isFinite(numericValue) ? numericValue.toFixed(3) : 'N/A'
@@ -286,9 +251,7 @@ function normalizeMockCandidate(record) {
     cost: Number(record.cost),
     status: record.status,
     time: record.time,
-    parameters: Object.fromEntries(
-      Object.entries(record.config).map(([key, value]) => [key, toUiMagnitude(value)]),
-    ),
+    parameters: { ...record.config },
     rawParameters: record.config,
     metadata: {
       config_id: record.config_id,
@@ -303,6 +266,8 @@ function syncParametersFromCandidate(candidate) {
   if (!candidate?.parameters) {
     return
   }
+
+  evaluation.value = null
 
   parameterFields.forEach((field) => {
     if (typeof candidate.parameters[field.key] === 'number') {
@@ -361,6 +326,7 @@ async function uploadGenome() {
     const payload = await response.json()
     sessionId.value = payload.session_id
     modelPath.value = payload.model_path
+    evaluation.value = null
     if (selectedMockAccession.value) {
       const firstMockCandidate = normalizeMockCandidate(mockResults.value[selectedMockAccession.value][0])
       syncParametersFromCandidate(firstMockCandidate)
@@ -408,9 +374,7 @@ async function runEvaluation() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         session_id: sessionId.value,
-        parameters: Object.fromEntries(
-          Object.entries(parameters).map(([key, value]) => [key, toModelBound(value)]),
-        ),
+        parameters: { ...parameters },
       }),
     })
 
@@ -442,7 +406,7 @@ function goNext() {
     return
   }
 
-  if (currentStep.value < 3) {
+  if (currentStep.value < 2) {
     stepDirection.value = 'forward'
     currentStep.value += 1
   }
@@ -467,7 +431,18 @@ function switchWorkspaceMode(mode) {
 }
 
 function selectCandidate(index) {
-  selectedCandidateIndex.value = index
+  if (!displayCandidates.value.length) {
+    selectedCandidateIndex.value = 0
+    return
+  }
+
+  const maxIndex = displayCandidates.value.length - 1
+  selectedCandidateIndex.value = Math.max(0, Math.min(index, maxIndex))
+}
+
+function updateParameter({ key, value }) {
+  parameters[key] = value
+  evaluation.value = null
 }
 
 const transitionName = computed(() =>
@@ -511,7 +486,6 @@ onMounted(() => {
       <Transition :name="transitionName" mode="out-in">
         <AppCardShell
           :key="currentStep"
-          :eyebrow="currentCopy.eyebrow"
           :title="currentCopy.title"
           :description="currentCopy.description"
         >
@@ -539,7 +513,7 @@ onMounted(() => {
               :mode="activeMode"
               :session-ready="sessionReady"
               :mock-accession="selectedMockAccession"
-              :top-k="topK"
+              :top-k="TOP_K"
               :best-candidate="bestAvailableCandidate"
               :candidates="displayCandidates"
               :selected-candidate="selectedDisplayCandidate"
@@ -547,26 +521,16 @@ onMounted(() => {
               :evaluation="evaluation"
               :diagnostics="diagnosticsEntries"
               :parameters="parameters"
-              :parameter-fields="parameterFields"
-              :format-decimal="formatDecimal"
-              :loading-evaluation="loading.evaluation"
-              @switch-mode="switchWorkspaceMode"
-              @select-candidate="selectCandidate"
-              @update:top-k="topK = $event"
-              @apply-candidate="applyCandidate"
-              @update-parameter="parameters[$event.key] = $event.value"
-              @evaluate="runEvaluation"
-            />
+            :parameter-fields="parameterFields"
+            :format-decimal="formatDecimal"
+            :loading-evaluation="loading.evaluation"
+            @switch-mode="switchWorkspaceMode"
+            @select-candidate="selectCandidate"
+            @apply-candidate="applyCandidate"
+            @update-parameter="updateParameter"
+            @evaluate="runEvaluation"
+          />
 
-            <SummaryStage
-              v-else
-              :best-candidate="bestAvailableCandidate"
-              :evaluation="evaluation"
-              :parameter-fields="parameterFields"
-              :mock-accession="selectedMockAccession"
-              :summary-narrative="summaryNarrative"
-              :format-decimal="formatDecimal"
-            />
           </template>
 
           <template #footer-left>
@@ -589,22 +553,19 @@ onMounted(() => {
 
           <template #footer-right>
             <button
+              v-if="currentStep < 2"
               class="primary-button"
-              :disabled="currentStep === 3 || (currentStep === 0 && (loading.upload || !selectedMockAccession))"
+              :disabled="currentStep === 0 && (loading.upload || !selectedMockAccession)"
               @click="currentStep === 0 ? uploadGenome() : goNext()"
             >
               {{
                 currentStep === 0
                   ? (loading.upload ? 'Preparing workspace...' : 'Upload and continue')
-                  : currentStep === 1
-                    ? (
-                        activeMode === 'recommended'
-                          ? 'Continue with optimization suggestions'
-                          : 'Continue with parameter simulation'
-                      )
-                  : currentStep === 2
-                    ? 'Review summary'
-                    : 'Next step'
+                  : (
+                      activeMode === 'recommended'
+                        ? 'Open optimization suggestions'
+                        : 'Open parameter simulation'
+                    )
               }}
             </button>
           </template>
