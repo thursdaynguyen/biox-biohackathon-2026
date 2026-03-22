@@ -23,6 +23,8 @@ def apply_media_and_gapfill(model, media, o2_bounds=None):
         raise ValueError(
             "media dict is required; provide all exchange bounds from the UI sliders."
         )
+    target_medium = model.medium.copy()
+    target_medium.update(media)
 
     o2_lower, o2_upper = o2_bounds if o2_bounds else (-20.0, 1000.0)
 
@@ -44,7 +46,7 @@ def apply_media_and_gapfill(model, media, o2_bounds=None):
     safe_medium = {}
     model_exchange_ids = [rxn.id for rxn in model.exchanges]
 
-    for rxn_id, bound in media.items():
+    for rxn_id, bound in target_medium.items():
         if rxn_id in model_exchange_ids:
             safe_medium[rxn_id] = bound
         else:
