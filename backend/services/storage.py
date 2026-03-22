@@ -51,9 +51,27 @@ def run_carveme(input_path: Path, output_path: Path) -> None:
 
     if process.returncode != 0:
         error_message = (process.stderr or process.stdout or "").strip()
+        if "CarveMe CLI was not found" in error_message or "No such file or directory: 'carve'" in error_message:
+            raise AppError(
+                code="MODEL_BUILD_FAILED",
+                message="CarveMe CLI is not installed or `carve` is not available on PATH.",
+                status_code=500,
+            )
         raise AppError(
             code="MODEL_BUILD_FAILED",
             message=f"CarveMe failed to build a GEM. {error_message}",
+            status_code=500,
+        )
+
+    if not output_path.exists():
+        error_message = (process.stderr or process.stdout or "").strip()
+        raise AppError(
+            code="MODEL_BUILD_FAILED",
+            message=(
+                "CarveMe finished without producing an SBML model file. "
+                f"Expected output: {output_path}. "
+                f"Details: {error_message or 'No output was reported.'}"
+            ),
             status_code=500,
         )
 
