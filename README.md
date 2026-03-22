@@ -1,6 +1,6 @@
-# MediaOpt (Hackathon MVP)
+# MediaOpt - BioHackathon Edinburgh 2026
 
-MediaOpt builds and evaluates genome-scale metabolic models (GEMs) for filamentous fungi. The demo flow takes a protein FASTA upload, auto-builds an SBML model with CarveMe, applies custom media bounds, runs COBRApy optimization, and returns flux diagnostics plus simple candidate suggestions.
+MediaOpt builds and evaluates genome-scale metabolic models (GEMs) for filamentous fungi. The demo flow takes a protein FASTA upload, auto-builds an SBML model with CarveMe, applies custom media bounds, runs COBRApy to get the objective for automatic optimization, and returns flux diagnostics plus simple candidate of media suggestions.
 
 ## What this MVP does
 - Accepts protein FASTA uploads and builds a GEM via the CarveMe CLI.
