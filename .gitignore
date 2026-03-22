@@ -19,7 +19,7 @@ venv/
 
 # Nodejs
 node_modules/
-vite/
+.vite/
 
 # Editors
 .idea/
