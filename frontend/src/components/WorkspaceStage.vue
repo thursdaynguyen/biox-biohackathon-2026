@@ -87,6 +87,10 @@ function fieldBarStyle(candidate, key) {
 function candidateLabel(index) {
   return `Suggestion ${index + 1}`
 }
+
+function formatDiagnosticValue(value) {
+  return typeof value === 'number' ? props.formatDecimal(value) : String(value ?? 'N/A')
+}
 </script>
 
 <template>
@@ -188,7 +192,7 @@ function candidateLabel(index) {
               <h4 class="section-heading">Simulation setup</h4>
             </div>
             <span class="metric-badge">
-              Result {{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}
+              Objective {{ evaluation ? formatDecimal(evaluation.objective_value) : 'No result yet' }}
             </span>
           </div>
 
@@ -229,23 +233,15 @@ function candidateLabel(index) {
         </article>
 
         <article class="content-block wide-block">
-          <p class="section-kicker">Simulation details</p>
+          <p class="section-kicker">Key outputs</p>
           <div v-if="evaluation" class="diagnostic-grid">
-            <div
-              v-for="(value, key) in evaluation.fluxes"
-              :key="key"
-              class="diagnostic-card"
-            >
-              <span>{{ key }}</span>
-              <strong>{{ formatDecimal(value) }}</strong>
+            <div class="diagnostic-card">
+              <span>objective_value</span>
+              <strong>{{ formatDecimal(evaluation.objective_value) }}</strong>
             </div>
-            <div
-              v-for="[key, value] in diagnostics"
-              :key="key"
-              class="diagnostic-card subtle"
-            >
-              <span>{{ key }}</span>
-              <strong>{{ formatDecimal(value) }}</strong>
+            <div class="diagnostic-card">
+              <span>byproduct_burden</span>
+              <strong>{{ formatDiagnosticValue(evaluation.byproduct_burden) }}</strong>
             </div>
           </div>
           <p v-else class="empty-copy">

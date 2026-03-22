@@ -8,13 +8,12 @@ from backend.services.storage import model_path
 from src.utils.apply_media import apply_media_and_gapfill, calculate_byproduct_burden
 
 
-def extract_fluxes(solution: cobra.Solution) -> dict[str, float]:
+def extract_fluxes(solution: cobra.Solution, reaction_ids: list[str] | None = None) -> dict[str, float]:
     fluxes = solution.fluxes
+    target_reactions = reaction_ids or []
     return {
-        "EX_citrate_e": float(fluxes.get("EX_citrate_e", 0.0)),
-        "EX_glc__D_e": float(fluxes.get("EX_glc__D_e", 0.0)),
-        "EX_nh4_e": float(fluxes.get("EX_nh4_e", 0.0)),
-        "EX_o2_e": float(fluxes.get("EX_o2_e", 0.0)),
+        reaction_id: float(fluxes.get(reaction_id, 0.0))
+        for reaction_id in target_reactions
     }
 
 

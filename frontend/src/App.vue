@@ -294,6 +294,8 @@ function syncParametersFromCandidate(candidate) {
     return
   }
 
+  evaluation.value = null
+
   parameterFields.forEach((field) => {
     if (typeof candidate.parameters[field.key] === 'number') {
       parameters[field.key] = candidate.parameters[field.key]
@@ -351,6 +353,7 @@ async function uploadGenome() {
     const payload = await response.json()
     sessionId.value = payload.session_id
     modelPath.value = payload.model_path
+    evaluation.value = null
     if (selectedMockAccession.value) {
       const firstMockCandidate = normalizeMockCandidate(mockResults.value[selectedMockAccession.value][0])
       syncParametersFromCandidate(firstMockCandidate)
@@ -464,6 +467,11 @@ function selectCandidate(index) {
   selectedCandidateIndex.value = Math.max(0, Math.min(index, maxIndex))
 }
 
+function updateParameter({ key, value }) {
+  parameters[key] = value
+  evaluation.value = null
+}
+
 const transitionName = computed(() =>
   stepDirection.value === 'forward' ? 'card-slide-forward' : 'card-slide-backward',
 )
@@ -541,15 +549,15 @@ onMounted(() => {
               :evaluation="evaluation"
               :diagnostics="diagnosticsEntries"
               :parameters="parameters"
-              :parameter-fields="parameterFields"
-              :format-decimal="formatDecimal"
-              :loading-evaluation="loading.evaluation"
-              @switch-mode="switchWorkspaceMode"
-              @select-candidate="selectCandidate"
-              @apply-candidate="applyCandidate"
-              @update-parameter="parameters[$event.key] = $event.value"
-              @evaluate="runEvaluation"
-            />
+            :parameter-fields="parameterFields"
+            :format-decimal="formatDecimal"
+            :loading-evaluation="loading.evaluation"
+            @switch-mode="switchWorkspaceMode"
+            @select-candidate="selectCandidate"
+            @apply-candidate="applyCandidate"
+            @update-parameter="updateParameter"
+            @evaluate="runEvaluation"
+          />
 
             <SummaryStage
               v-else
