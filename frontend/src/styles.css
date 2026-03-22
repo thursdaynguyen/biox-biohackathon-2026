@@ -563,6 +563,12 @@ select {
   margin-top: 2px;
 }
 
+.workspace-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
 .emphasis-block h3,
 .compact-block h3 {
   font-size: clamp(1.8rem, 3vw, 2.4rem);

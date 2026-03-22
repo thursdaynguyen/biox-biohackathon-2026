@@ -161,22 +161,11 @@ function candidateLabel(index) {
           </p>
         </article>
 
-        <article class="content-block compact-block">
-          <p class="section-kicker">Suggestion scope</p>
-          <h3>Top {{ topK }}</h3>
-        </article>
-
-        <article class="content-block wide-block compact-action-block">
-          <p class="section-kicker">Next action</p>
-          <div v-if="selectedCandidate" class="selector-actions">
-            <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
-              Send this formulation to simulation
-            </button>
-          </div>
-          <p v-else class="empty-copy">
-            No optimization suggestions are available for the selected profile.
-          </p>
-        </article>
+        <div v-if="selectedCandidate" class="workspace-inline-actions">
+          <button class="secondary-button" @click="$emit('apply-candidate', selectedCandidate)">
+            Send this formulation to simulation
+          </button>
+        </div>
       </div>
     </div>
 
